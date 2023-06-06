@@ -1,2 +1,6 @@
 pandas
 scikit-learn
+fastapi
+uvicorn[standard]
+pandas
+dvc
