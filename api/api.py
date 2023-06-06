@@ -61,6 +61,7 @@ def get_unseen_movies(user_id, df):
     user_movies = df[df['userId'] == int(user_id)]['movieId'].unique()
     all_movies = df['movieId'].unique()
     unseen_movies = set(all_movies) - set(user_movies)
+    unseen_movies = [int(movie) for movie in list(unseen_movies)]
     return unseen_movies
 
 
@@ -70,6 +71,5 @@ def random_output(query_params: dict = Depends(query_params)):
         unseen_movies = get_unseen_movies(query_params['user_id'], data)
     else:
         unseen_movies = get_unseen_movies(query_params['user_id'], data)
-    print(unseen_movies)
-    random_movie = random.choice(list(unseen_movies))
+    random_movie = random.choice(unseen_movies)
     return {"movie": random_movie}
