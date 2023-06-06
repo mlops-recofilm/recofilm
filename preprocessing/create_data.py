@@ -6,13 +6,13 @@ class Data:
     def __init__(self):
         self.merged_path = '../ml-20m/merged.csv'
         self.final_path = '../ml-20m/final.csv'
-        self.load_data()
+        data = self.load_data()
 
     def load_data(self):
         if os.path.exists(self.final_path):
             return pd.read_csv(self.final_path)
         else:
-            self.prepare_data()
+            return self.prepare_data()
 
     def create_data(self):
         mov_df = pd.read_csv('../ml-20m/movies.csv')
@@ -63,5 +63,3 @@ class Data:
 
         df.to_csv(self.final_path, index=False)
         return df
-
-Data()
