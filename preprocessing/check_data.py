@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import glob
 
 csv_path = glob.glob('../ml-20m/*csv')
