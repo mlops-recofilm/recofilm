@@ -32,3 +32,35 @@ class MovieModel:
         recommendations = df[['movieId', 'rating', 'userId','title']].drop_duplicates().reset_index(drop=True)['title'][indices[0]].to_list()
         return recommendations
 
+    def evaluate(self,df: pd.DataFrame, movie_title: str, num_recommendations: int, title_dict: dict):
+        recommendations = self.predict(df,movie_title,num_recommendations, title_dict)
+        user_eval = df[df['title'] == movie_title]['userId'].unique()
+        sub_df = df[(df['userId'].isin(user_eval)) & (df['title'].isin(recommendations))][['movieId', 'rating', 'userId','title']].drop_duplicates()
+        score = sub_df.groupby('title').agg({'rating': 'mean', 'userId': 'count'})
+        print(score)
+
+    def stability(self,df: pd.DataFrame, movie_title: str, num_recommendations: int, title_dict: dict):
+        i = 0
+        recommendations = []
+        while i <100:
+            rec = self.predict(df,movie_title,num_recommendations, title_dict)
+            recommendations.extend(rec)
+            i+=1
+        arr, count = np.unique(recommendations, return_counts=True)
+        count = count/100
+        dict_stability = {k:v for k,v in zip(arr, count)}
+        print(dict_stability)
+
+    def prediction_comparaison(self,df: pd.DataFrame, movie_title: list[str], num_recommendations: int, title_dict: dict):
+        i = 0
+        recommendations = []
+        for m in movie_title:
+            rec = self.predict(df,m,num_recommendations, title_dict)
+            recommendations.extend(rec)
+            i+=1
+        arr, count = np.unique(recommendations, return_counts=True)
+        count = count/len(movie_title)
+        dict_stability = {k:v for k,v in zip(arr, count)}
+        print(dict_stability)
+
+
