@@ -32,16 +32,15 @@ def get_user_credentials(
 ):
     """Checks user's credentials - authentification_dict is used as a user database.
     """
-    # check that credentials.username exists - in DB ?
+    # check that credentials.username exists in DB
     existing_users = data['userId'].unique()
-    if not (credentials.username in existing_users):
+    if not (int(credentials.username) in existing_users):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username", #  or password
             headers={"WWW-Authenticate": "Basic"},
         )
     return credentials.username
-    
 
 async def query_params(
     user_id: str,
@@ -84,6 +83,7 @@ def get_unseen_movies(user_id, df):
 
 @app.get("/random", tags=['model'])
 def random_output(query_params: dict = Depends(query_params)):
+# def random_output(userid: Annotated[str, Depends(get_user_credentials)], query_params: dict = Depends(query_params)):    
     if query_params['subject']:
         unseen_movies = get_unseen_movies(query_params['user_id'], data)
     else:
@@ -92,7 +92,7 @@ def random_output(query_params: dict = Depends(query_params)):
     return {"movie": random_movie}
 
 
-@app.get("/remind_me/{k}/{userid}", tags=['historical'])
+@app.get("/remind_me/{k}", tags=['historical'])
 def remind_reco(k: int, userid: Annotated[str, Depends(get_user_credentials)]) -> List[str]:
     """Remind last k unique recommended movies"""
 
