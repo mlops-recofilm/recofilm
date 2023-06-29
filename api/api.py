@@ -1,10 +1,12 @@
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi import FastAPI, HTTPException, Response, status, Depends, Header, Query
-from typing import List, Optional
+import json
+from typing import List, Optional, Annotated
 from pydantic import BaseModel
 import pandas as pd
 import random
 import uvicorn
+
 
 app = FastAPI(
     title="Reco API",
@@ -73,3 +75,46 @@ def random_output(query_params: dict = Depends(query_params)):
         unseen_movies = get_unseen_movies(query_params['user_id'], data)
     random_movie = random.choice(unseen_movies)
     return {"movie": random_movie}
+
+
+@app.get("/remind_me/{k}/{userid}", tags=['historical'])
+def remind_reco(k: int, userid: Annotated[str, Depends(get_admin_credentials)]) -> List[str]:
+    """Remind last k unique recommended movies"""
+
+    with open ("../data/outputs/predictions_history.json", "r") as f:
+        recommended_movies = json.loads(f.read())
+
+    list_movies = recommended_movies[userid]['movies']
+    j=k
+    last_unique_k = []
+    while len(last_unique_k) < k and j < len(list_movies):
+        last_unique_k = list(set(list_movies[-j:]))
+        j += 1
+    return last_unique_k
+
+def get_user_credentials(
+    credentials: Annotated[HTTPBasicCredentials, Depends(security)]
+):
+    """Checks user's credentials - authentification_dict is used as a user database.
+    """
+    # check that credentials.username exists - in DB ?
+    existing_users = []
+    if not (credentials.username in existing_users):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username", #  or password
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
+    # is_correct_username =  credentials.username in authentification_dict.keys()
+    # if is_correct_username:
+    #     is_correct_password = secrets.compare_digest(
+    #     credentials.password, authentification_dict[credentials.username]
+    # )
+    # # #TODO how to securely check existance of the user ? (timing attacks)
+    # else:
+    #     secrets.compare_digest(
+    #         'first fake password', 'second fake password'
+    # )
+    
+    
