@@ -107,3 +107,11 @@ def remind_reco(k: int, userid: Annotated[str, Depends(get_user_credentials)]) -
         j += 1
     return last_unique_k
 
+def add_rating(userid, movieid, rating):
+    #TODO add a line to database
+    return True
+
+@app.post("/add_note", tags=['add notes'])
+def add_note(movieid, rating, userid: Annotated[str, Depends(get_user_credentials)]) -> bool:
+    success = add_rating(userid, movieid, rating)
+    return success
