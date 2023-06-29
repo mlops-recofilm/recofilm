@@ -27,6 +27,21 @@ security = HTTPBasic()
 
 data = pd.read_csv('../ml-20m/final.csv')
 
+def get_user_credentials(
+    credentials: Annotated[HTTPBasicCredentials, Depends(security)]
+):
+    """Checks user's credentials - authentification_dict is used as a user database.
+    """
+    # check that credentials.username exists - in DB ?
+    existing_users = data['userId'].unique()
+    if not (credentials.username in existing_users):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username", #  or password
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
+    
 
 async def query_params(
     user_id: str,
@@ -78,7 +93,7 @@ def random_output(query_params: dict = Depends(query_params)):
 
 
 @app.get("/remind_me/{k}/{userid}", tags=['historical'])
-def remind_reco(k: int, userid: Annotated[str, Depends(get_admin_credentials)]) -> List[str]:
+def remind_reco(k: int, userid: Annotated[str, Depends(get_user_credentials)]) -> List[str]:
     """Remind last k unique recommended movies"""
 
     with open ("../data/outputs/predictions_history.json", "r") as f:
@@ -92,29 +107,3 @@ def remind_reco(k: int, userid: Annotated[str, Depends(get_admin_credentials)]) 
         j += 1
     return last_unique_k
 
-def get_user_credentials(
-    credentials: Annotated[HTTPBasicCredentials, Depends(security)]
-):
-    """Checks user's credentials - authentification_dict is used as a user database.
-    """
-    # check that credentials.username exists - in DB ?
-    existing_users = []
-    if not (credentials.username in existing_users):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username", #  or password
-            headers={"WWW-Authenticate": "Basic"},
-        )
-    return credentials.username
-    # is_correct_username =  credentials.username in authentification_dict.keys()
-    # if is_correct_username:
-    #     is_correct_password = secrets.compare_digest(
-    #     credentials.password, authentification_dict[credentials.username]
-    # )
-    # # #TODO how to securely check existance of the user ? (timing attacks)
-    # else:
-    #     secrets.compare_digest(
-    #         'first fake password', 'second fake password'
-    # )
-    
-    
