@@ -1,11 +1,15 @@
+
+from enum import Enum
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi import FastAPI, HTTPException, Response, status, Depends, Header, Query
 import json
 from typing import List, Optional, Annotated
-from pydantic import BaseModel
+# from pydantic import BaseModel
 import pandas as pd
 import random
 import uvicorn
+
+from utils import *
 
 
 app = FastAPI(
@@ -23,43 +27,10 @@ app = FastAPI(
         }
     ]
 )
-security = HTTPBasic()
 
-data = pd.read_csv('../ml-20m/final.csv')
+data = get_data()
 
-def get_user_credentials(
-    credentials: Annotated[HTTPBasicCredentials, Depends(security)]
-):
-    """Checks user's credentials - authentification_dict is used as a user database.
-    """
-    # check that credentials.username exists in DB
-    existing_users = data['userId'].unique()
-    if not (int(credentials.username) in existing_users):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username", #  or password
-            headers={"WWW-Authenticate": "Basic"},
-        )
-    return credentials.username
-
-async def query_params(
-    user_id: str,
-    subject: Optional[List[str]] = Query(None),
-):
-    """
-    Returns a dictionary containing the given `use` parameter and an optional `subject` list.
-
-    Args:
-        user_id : str
-            The user_id
-        subject : Optional[List[str]], default=None
-            An optional list of subject strings to filter genres by.
-
-    Returns:
-        Dict[str, Union[str, List[str]]]
-            A dictionary containing the given `use` and optional `subject` parameters.
-    """
-    return {"user_id": user_id, "subject": subject}
+GenreEnum = get_GenreEnum(data)
 
 # Route de base pour vérifier le fonctionnement de l'API
 @app.get("/", tags=['home'])
@@ -73,14 +44,6 @@ def read_root():
     return {"message": "API is up and running"}
 
 
-def get_unseen_movies(user_id, df):
-    user_movies = df[df['userId'] == int(user_id)]['movieId'].unique()
-    all_movies = df['movieId'].unique()
-    unseen_movies = set(all_movies) - set(user_movies)
-    unseen_movies = [int(movie) for movie in list(unseen_movies)]
-    return unseen_movies
-
-
 @app.get("/random", tags=['model'])
 def random_output(query_params: dict = Depends(query_params)):
 # def random_output(userid: Annotated[str, Depends(get_user_credentials)], query_params: dict = Depends(query_params)):    
@@ -92,7 +55,7 @@ def random_output(query_params: dict = Depends(query_params)):
     return {"movie": random_movie}
 
 
-@app.get("/remind_me/{k}", tags=['historical'])
+@app.get("/remindMe/{k}", tags=['historical'])
 def remind_reco(k: int, userid: Annotated[str, Depends(get_user_credentials)]) -> List[str]:
     """Remind last k unique recommended movies"""
 
@@ -107,11 +70,52 @@ def remind_reco(k: int, userid: Annotated[str, Depends(get_user_credentials)]) -
         j += 1
     return last_unique_k
 
-def add_rating(userid, movieid, rating):
-    #TODO add a line to database
-    return True
 
-@app.post("/add_note", tags=['add notes'])
-def add_note(movieid, rating, userid: Annotated[str, Depends(get_user_credentials)]) -> bool:
-    success = add_rating(userid, movieid, rating)
+@app.post("/addRating", tags=['add data'])
+def add_rating(movieid: str, rating: float, userid: Annotated[str, Depends(get_user_credentials)]) -> bool:
+    success = add_ratings(userid, movieid, rating)
     return success
+
+
+@app.get("/bestMoviesByGenre", tags=['add data'])
+def get_best_movies_by_genre(genre: GenreEnum, userid: Annotated[str, Depends(get_user_credentials)]) -> List[str]:
+    top_movies_by_genre = data[data['genres'].str.contains(genre.value)]\
+                               .sort_values('rating', ascending=False)\
+                                .head(10)[['movieId','title']]
+    top_movies_by_genre_dict = top_movies_by_genre.to_dict('split')['data']
+    top_movies_by_genre_list = [f'{i[1]} (id = {i[0]})' for i in top_movies_by_genre_dict]
+    print(top_movies_by_genre_list)
+    return top_movies_by_genre_list
+
+
+@app.post("/createUser", tags=['add data'])
+def create_user(new_ratings: RatingsItem) -> int:
+    """Creates a new user by adding
+    Returns freshly created user id."""
+    # make sure to have the latest version of data
+    data = get_data()
+
+    new_userId = int(data.userId.max()) + 1
+    #TODO how to manage possible multiple edits of the file ? lock it ?
+
+    # check that there are at least MIN_N_RATINGS_NEW_USER movie ratings provided
+    if len(set(new_ratings.movieid)) != len(set(new_ratings.rating)) \
+        or len(set(new_ratings.movieid)) < MIN_N_RATINGS_NEW_USER \
+            or len(set(new_ratings.movieid)) != len(new_ratings.movieid):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least 3 unique movies (ids) should be provided with their corresponding ratings",
+        )
+    
+    for movieid in new_ratings.movieid:
+        if movieid not in data.movieId.unique():
+            raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Movie with id {movieid} doesn't exist, please enter an existing movie",
+        )
+
+    #TODO add userid to db
+
+    # add new ratings
+    add_ratings(userid=new_userId, movieids=new_ratings.movieid, ratings=new_ratings.rating)
+    return new_userId
