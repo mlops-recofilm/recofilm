@@ -1,16 +1,36 @@
-
-from enum import Enum
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi import FastAPI, HTTPException, Response, status, Depends, Header, Query
 import json
+import os
 from typing import List, Optional, Annotated
-# from pydantic import BaseModel
 import pandas as pd
 import random
-import uvicorn
+# import uvicorn
 
 from utils import *
 
+
+data = get_data()
+
+def get_next_new_userid():
+    NEXT_NEW_USERID = os.getenv('NEXT_NEW_USERID')
+    if not NEXT_NEW_USERID: # variable not defined
+        NEXT_NEW_USERID = data.userId.max() + 1
+        os.environ['NEXT_NEW_USERID'] = str(NEXT_NEW_USERID)
+    return NEXT_NEW_USERID
+
+# print(NEXT_NEW_USERID)
+
+
+# # Set environment variables
+# os.environ['NEXT_NEW_USERID'] = str(data.userId.max() + 1)
+
+# print('NEXT_USERID' in os.environ)
+# # Get environment variables
+# NEXT_USERID = os.getenv('NEXT_USERID')
+# print('NEXT_USERID',NEXT_USERID)
+# NEXT_NEW_USERID = os.getenv('NEXT_NEW_USERID')
+# print('NEXT_NEW_USERID',NEXT_NEW_USERID)
 
 app = FastAPI(
     title="Reco API",
@@ -28,7 +48,7 @@ app = FastAPI(
     ]
 )
 
-data = get_data()
+
 
 GenreEnum = get_GenreEnum(data)
 
@@ -95,7 +115,7 @@ def create_user(new_ratings: RatingsItem) -> int:
     # make sure to have the latest version of data
     data = get_data()
 
-    new_userId = int(data.userId.max()) + 1
+    # new_userId = int(data.userId.max()) + 1
     #TODO how to manage possible multiple edits of the file ? lock it ?
 
     # check that there are at least MIN_N_RATINGS_NEW_USER movie ratings provided
@@ -114,8 +134,14 @@ def create_user(new_ratings: RatingsItem) -> int:
             detail=f"Movie with id {movieid} doesn't exist, please enter an existing movie",
         )
 
-    #TODO add userid to db
-
+    next_new_userid = get_next_new_userid()
     # add new ratings
-    add_ratings(userid=new_userId, movieids=new_ratings.movieid, ratings=new_ratings.rating)
-    return new_userId
+    add_ratings(userid=next_new_userid, movieids=new_ratings.movieid, ratings=new_ratings.rating)
+    
+    # update NEXT_NEW_USERID for next users
+    os.environ['NEXT_NEW_USERID'] = str(int(os.getenv('NEXT_NEW_USERID')) + 1)
+
+    # print('future', int(next_new_userid) + 1)
+    # print('read', os.getenv('NEXT_NEW_USERID'))
+    return next_new_userid
+  
