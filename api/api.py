@@ -47,8 +47,7 @@ app = FastAPI(
         }
     ]
 )
-
-
+app.state.NEW_USERID = -1
 
 GenreEnum = get_GenreEnum(data)
 
@@ -134,14 +133,31 @@ def create_user(new_ratings: RatingsItem) -> int:
             detail=f"Movie with id {movieid} doesn't exist, please enter an existing movie",
         )
 
-    next_new_userid = get_next_new_userid()
-    # add new ratings
-    add_ratings(userid=next_new_userid, movieids=new_ratings.movieid, ratings=new_ratings.rating)
+    # # version 1
+    # next_new_userid = get_next_new_userid()
+    # # add new ratings
+    # add_ratings(userid=next_new_userid, movieids=new_ratings.movieid, ratings=new_ratings.rating) # next_new_userid
     
-    # update NEXT_NEW_USERID for next users
-    os.environ['NEXT_NEW_USERID'] = str(int(os.getenv('NEXT_NEW_USERID')) + 1)
+    # # update NEXT_NEW_USERID for next users
+    # os.environ['NEXT_NEW_USERID'] = str(int(os.getenv('NEXT_NEW_USERID')) + 1)
+    
+    # # version 2
+    # if app.state.NEW_USERID == -1:
+    #     app.state.NEW_USERID = data.userId.max() + 1
+    # add_ratings(userid=app.state.NEW_USERID, movieids=new_ratings.movieid, ratings=new_ratings.rating) # next_new_userid
+    # app.state.NEW_USERID += 1
+    # return app.state.NEW_USERID - 1
 
-    # print('future', int(next_new_userid) + 1)
-    # print('read', os.getenv('NEXT_NEW_USERID'))
+    # version 3
+    with open("../data/next_new_userid", "r+") as next_new_userid_file:
+        next_new_userid = next_new_userid_file.read()
+        next_new_userid = int(next_new_userid)
+        if next_new_userid == -1:
+            next_new_userid = data.userId.max() + 1
+        add_ratings(userid=next_new_userid, movieids=new_ratings.movieid, ratings=new_ratings.rating)
+        next_new_userid_file.seek(0)
+        next_new_userid_file.truncate(0)
+        next_new_userid_file.write(str(next_new_userid + 1))
+
     return next_new_userid
   
