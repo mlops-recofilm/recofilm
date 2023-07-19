@@ -1,6 +1,6 @@
-from preprocessing.create_data import Data
-from model.movie_model import MovieModel
-from model.utils import split_data_random, check_overlap
+from model_job.preprocessing.create_data import Data
+from model_job.model.movie_model import MovieModel
+from model_job.model.utils import split_data_random, check_overlap
 
 TEST_SIZE = 0.3
 
