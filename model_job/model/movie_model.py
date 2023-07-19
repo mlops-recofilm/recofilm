@@ -1,9 +1,12 @@
 import pandas as pd
 import numpy as np
+import os
 from scipy.sparse import csr_matrix
 from sklearn.neighbors import NearestNeighbors
 from joblib import dump, load
 
+
+from model_job.utils.path import model_folder
 
 class MovieModel:
 
@@ -12,17 +15,16 @@ class MovieModel:
         df = df[['movieId', 'rating', 'userId']].drop_duplicates()
         rating_matrix = df.pivot(index='movieId', columns='userId', values='rating').fillna(0)
         csr_array = csr_matrix(rating_matrix.values)
-        save_sparse_csr(f'data/data/movie_model_data.npz', csr_array)
         return csr_array
 
     def fit(self, df: pd.DataFrame, n_neighbors: int):
         rating_matrix = self.prepare_data(df)
         model = NearestNeighbors(metric='cosine', algorithm='brute', n_neighbors=n_neighbors)
         model.fit(rating_matrix)
-        dump(model, 'movie_model.joblib')
+        dump(model, os.path.join(model_folder,'movie_model.joblib'))
 
     def predict(self, df: pd.DataFrame, movie_title: str, num_recommendations: int, title_dict: dict):
-        model = load('movie_model.joblib')
+        model = load(os.path.join(model_folder,'movie_model.joblib'))
         movie_id = title_dict[movie_title]
         rating_matrix = self.prepare_data(df)
         distances, indices = model.kneighbors(rating_matrix[movie_id], n_neighbors=num_recommendations)
@@ -34,7 +36,10 @@ class MovieModel:
         user_eval = df[df['title'] == movie_title]['userId'].unique()
         sub_df = df[(df['userId'].isin(user_eval)) & (df['title'].isin(recommendations))][['movieId', 'rating', 'userId','title']].drop_duplicates()
         score = sub_df.groupby('title').agg({'rating': 'mean', 'userId': 'count'})
+        score['rating_times_userId'] = score['rating'] * score['userId']
+        cum_sum = score['rating_times_userId'].sum()/score['userId'].sum()
         print(score)
+        return cum_sum, score.index
 
     def stability(self,df: pd.DataFrame, movie_title: str, num_recommendations: int, title_dict: dict):
         i = 0
