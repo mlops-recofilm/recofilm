@@ -121,4 +121,5 @@ class Data:
             df['title'] = df['title'].str.extract(r'^(.*?)\s\(\d{4}\)$')
 
         df.to_csv(self.final_path, index=False)
+        df[['movieId', 'rating', 'userId', 'genres']].drop_duplicates().to_csv(f'data/data/data_api.csv')
         return df

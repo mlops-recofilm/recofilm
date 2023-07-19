@@ -37,6 +37,7 @@ def split_data_random(df: pd.DataFrame):
     title_dict = pd.Series(temp.movieId.values, index=temp.title).to_dict()
     return train_data, test_data, title_dict
 
+
 def check_overlap(train_data, test_data):
     train_data = train_data[['movieId', 'userId']].drop_duplicates()
     test_data = test_data[['movieId', 'userId']].drop_duplicates()
