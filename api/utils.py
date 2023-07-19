@@ -24,8 +24,10 @@ def get_user_credentials(
     """
     data = get_data()
     # check that credentials.username exists in DB
-    existing_users = data['userId'].unique()
-    if not (int(credentials.username) in existing_users):
+    existing_users = data['userId'].astype(str).unique()
+    if not (credentials.username in existing_users): #int(
+        # print(existing_users)
+        # print(credentials.username, type(credentials.username))
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username", #  or password

@@ -1,0 +1,27 @@
+version: "1"
+services:
+  api-service:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+      # args:
+      #   port_authent: 8001
+    container_name: reco-api
+    volumes:
+      - data:/code/data
+      - ml-20m:/code/ml-20m
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: curl --fail http://localhost/status || exit 0
+      interval: 2s
+      retries: 3
+      start_period: 2s
+      timeout: 1s
+
+
+volumes:
+  data:
+    external: true
+  ml-20m:
+    external: true
