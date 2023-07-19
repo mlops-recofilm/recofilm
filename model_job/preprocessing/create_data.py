@@ -3,6 +3,9 @@ import os
 import gc
 
 
+from model_job.utils.path import data_folder
+
+
 class Data:
     """
         A class for loading and preparing data.
@@ -35,8 +38,8 @@ class Data:
         self.min_rating = max(50, min_rating)
         self.min_tags = max(5, min_tags)
         self.parse_date = parse_date
-        self.merged_path = f'ml-20m/merged_{self.add_link}_{self.min_relevance}_{self.min_rating}_{self.min_tags}_{self.parse_date}.csv'
-        self.final_path = f'ml-20m/final_{self.add_link}_{self.min_relevance}_{self.min_rating}_{self.min_tags}_{self.parse_date}.csv'
+        self.merged_path = os.path.join(data_folder,f'merged_{self.add_link}_{self.min_relevance}_{self.min_rating}_{self.min_tags}_{self.parse_date}.csv')
+        self.final_path = os.path.join(data_folder,f'final_{self.add_link}_{self.min_relevance}_{self.min_rating}_{self.min_tags}_{self.parse_date}.csv')
         self.data = self.load_data()
 
     def load_data(self) -> pd.DataFrame:
@@ -121,5 +124,5 @@ class Data:
             df['title'] = df['title'].str.extract(r'^(.*?)\s\(\d{4}\)$')
 
         df.to_csv(self.final_path, index=False)
-        df[['movieId', 'rating', 'userId', 'genres']].drop_duplicates().to_csv(f'data/data/data_api.csv')
+        df[['movieId', 'rating', 'userId', 'genres','title']].drop_duplicates().to_csv(os.path.join(data_folder,f'data_api.csv'), index = False)
         return df
