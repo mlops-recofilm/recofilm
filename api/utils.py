@@ -5,16 +5,25 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import pandas as pd
 from pydantic import BaseModel
 from typing import List, Optional, Annotated
+from scipy.sparse import csr_matrix
 
 
-DATA_PATH = '../ml-20m/final.csv'
+
+DATA_PATH = '../docker_volume/data/data_api.csv'
 MIN_N_RATINGS_NEW_USER = 3
 
 security = HTTPBasic()
 
 
 def get_data(data_path=DATA_PATH):
-    return pd.read_csv(data_path)
+    data = pd.read_csv(data_path)
+    df = data[['movieId', 'rating', 'userId']].drop_duplicates()
+    rating_matrix = df.pivot(index='movieId', columns='userId', values='rating').fillna(0)
+    movie_data = csr_matrix(rating_matrix.values)
+    rating_matrix = df.pivot(index='userId', columns='movieId', values='rating').fillna(0)
+    user_data = csr_matrix(rating_matrix.values)
+    title_dict = pd.Series(data.movieId.values, index=data.title).to_dict()
+    return data, movie_data, user_data, title_dict
 
 
 def get_user_credentials(
@@ -37,6 +46,7 @@ def get_user_credentials(
 async def query_params(
     user_id: str,
     subject: Optional[List[str]] = Query(None),
+    movie_name: Optional[str] = None,
 ):
     """
     Returns a dictionary containing the given `use` parameter and an optional `subject` list.
@@ -46,12 +56,13 @@ async def query_params(
             The user_id
         subject : Optional[List[str]], default=None
             An optional list of subject strings to filter genres by.
-
+        movie_name : Optional[str], default=None
+            An optional str of movie.
     Returns:
         Dict[str, Union[str, List[str]]]
             A dictionary containing the given `use` and optional `subject` parameters.
     """
-    return {"user_id": user_id, "subject": subject}
+    return {"user_id": user_id, "subject": subject, 'movie_name': movie_name}
 
 
 def get_GenreEnum(df) -> Enum:
@@ -63,7 +74,9 @@ def get_GenreEnum(df) -> Enum:
     return GenreEnum
 
 
-def get_unseen_movies(user_id, df):
+def get_unseen_movies(df, user_id, genres):
+    if genres:
+        df = df.loc[(df['genres'].str.contains('|'.join(genres)))]
     user_movies = df[df['userId'] == int(user_id)]['movieId'].unique()
     all_movies = df['movieId'].unique()
     unseen_movies = set(all_movies) - set(user_movies)

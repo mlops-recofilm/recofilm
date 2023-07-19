@@ -3,14 +3,16 @@ from fastapi import FastAPI, HTTPException, Response, status, Depends, Header, Q
 import json
 import os
 from typing import List, Optional, Annotated
-import pandas as pd
 import random
+from joblib import load
 # import uvicorn
 
 from utils import *
 
 
-data = get_data()
+model_folder = '../docker_volume/model_folder'
+
+data, movie_data, user_data, title_dict = get_data()
 
 def get_next_new_userid():
     NEXT_NEW_USERID = os.getenv('NEXT_NEW_USERID')
@@ -65,14 +67,19 @@ def read_root():
 
 @app.get("/random", tags=['model'])
 def random_output(query_params: dict = Depends(query_params)):
-# def random_output(userid: Annotated[str, Depends(get_user_credentials)], query_params: dict = Depends(query_params)):    
-    if query_params['subject']:
-        unseen_movies = get_unseen_movies(query_params['user_id'], data)
-    else:
-        unseen_movies = get_unseen_movies(query_params['user_id'], data)
+    unseen_movies = get_unseen_movies(data, query_params['user_id'], query_params['subject'])
     random_movie = random.choice(unseen_movies)
-    return {"movie": random_movie}
+    return {"movie": [k for k, v in title_dict.items() if v == random_movie][0]}
 
+
+@app.get("/movie_model", tags=['model'])
+def random_output(query_params: dict = Depends(query_params)):
+    model = load(os.path.join(model_folder, 'movie_model.joblib'))
+    movie_id = title_dict[query_params['movie_name']]
+    distances, indices = model.kneighbors(movie_data[movie_id], n_neighbors=10)
+    unseen_movies = get_unseen_movies(data.iloc[indices[0]], query_params['user_id'], query_params['subject'])
+    random_movie = random.choice(unseen_movies)
+    return {"movie": [k for k, v in title_dict.items() if v == random_movie][0]}
 
 @app.get("/remindMe/{k}", tags=['historical'])
 def remind_reco(k: int, userid: Annotated[str, Depends(get_user_credentials)]) -> List[str]:
