@@ -11,7 +11,7 @@ from model_job.utils.path import model_folder
 
 class UserModel:
     """
-    A class for movie recommendation using collaborative filtering.
+    A class for user recommendation using collaborative filtering.
 
     Args:
         df (pandas.DataFrame): The input DataFrame containing movie ratings data with columns 'movieId', 'rating', and 'userId'.
@@ -19,22 +19,22 @@ class UserModel:
 
     Methods:
         prepare_data(df: pd.DataFrame) -> scipy.sparse.csr.csr_matrix:
-            Prepare the movie rating data and return it in a sparse CSR matrix format.
+            Prepare the user rating data and return it in a sparse CSR matrix format.
 
         fit(df: pd.DataFrame, n_neighbors: int) -> None:
-            Fit the movie recommendation model using collaborative filtering.
+            Fit the user recommendation model using collaborative filtering.
 
-        predict(df: pd.DataFrame, movie_title: str, num_recommendations: int, title_dict: dict) -> List[str]:
-            Generate movie recommendations based on a given movie title.
+        predict(df: pd.DataFrame, user_id: int, num_recommendations: int) -> List[str]:
+            Generate movie recommendations based on a given user_id.
 
         evaluate(df: pd.DataFrame, movie_title: str, num_recommendations: int, title_dict: dict) -> Tuple[float, List[str]]:
             Evaluate the model's recommendations by comparing them to actual ratings.
 
-        stability(df: pd.DataFrame, movie_title: str, num_recommendations: int, title_dict: dict) -> None:
-            Assess the stability of the recommendations for a given movie.
+        stability(df: pd.DataFrame, movie_title: str, num_recommendations: int) -> None:
+            Assess the stability of the recommendations for a given user.
 
-        prediction_comparaison(df: pd.DataFrame, movie_title: list[str], num_recommendations: int, title_dict: dict) -> None:
-            Compare movie recommendations for multiple movie titles.
+        prediction_comparaison(df: pd.DataFrame, users_id: list[str], num_recommendations: int) -> None:
+            Compare recommendations for multiple users.
 
     Example usage:
     ```
@@ -43,7 +43,7 @@ class UserModel:
     movie_title = 'Inception'
     num_recommendations = 10
     title_dict = {'Inception': 1234, 'The Dark Knight': 5678, ...}
-    recommendations = movie_model.predict(movie_ratings_df, movie_title, num_recommendations, title_dict)
+    recommendations = movie_model.predict(movie_ratings_df, movie_title, num_recommendations)
     print(recommendations)
     ```
     """
@@ -163,7 +163,7 @@ class UserModel:
 
         Args:
             df (pandas.DataFrame): The input DataFrame containing movie ratings data with columns 'movieId', 'rating', and 'userId'.
-            movie_title (list[str]): A list of user_id for which recommendations are to be compared.
+            users_id (list[str]): A list of user_id for which recommendations are to be compared.
             num_recommendations (int): The number of movie recommendations to generate and compare for each movie title.
 
         Returns:
