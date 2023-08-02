@@ -85,7 +85,7 @@ def random_output(query_params: dict = Depends(query_params)):
 def remind_reco(k: int, userid: Annotated[str, Depends(get_user_credentials)]) -> List[str]:
     """Remind last k unique recommended movies"""
 
-    with open ("../data/outputs/predictions_history.json", "r") as f:
+    with open ("../docker_volume/outputs/predictions_history.json", "r") as f:
         recommended_movies = json.loads(f.read())
 
     list_movies = recommended_movies[userid]['movies']
@@ -156,7 +156,7 @@ def create_user(new_ratings: RatingsItem) -> int:
     # return app.state.NEW_USERID - 1
 
     # version 3
-    with open("../data/next_new_userid", "r+") as next_new_userid_file:
+    with open("../docker_volume/next_new_userid", "r+") as next_new_userid_file:
         next_new_userid = next_new_userid_file.read()
         next_new_userid = int(next_new_userid)
         if next_new_userid == -1:

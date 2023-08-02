@@ -3,7 +3,7 @@ import os
 import gc
 
 
-from model_job.utils.path import data_folder
+from utils.path import data_folder, input_data_folder
 
 
 class Data:
@@ -61,13 +61,13 @@ class Data:
         Returns:
             pandas.DataFrame: The created data.
         """
-        mov_df = pd.read_csv('ml-20m/movies.csv')
-        rat_df = pd.read_csv('ml-20m/ratings.csv')
-        gen_tag_df = pd.read_csv('ml-20m/genome-tags.csv')
-        gen_sco_df = pd.read_csv('ml-20m/genome-scores.csv')
-        tag_df = pd.read_csv('ml-20m/tags.csv')
+        mov_df = pd.read_csv(os.path.join(input_data_folder, 'movies.csv'))
+        rat_df = pd.read_csv(os.path.join(input_data_folder, 'ratings.csv'))
+        gen_tag_df = pd.read_csv(os.path.join(input_data_folder, 'genome-tags.csv'))
+        gen_sco_df = pd.read_csv(os.path.join(input_data_folder, 'genome-scores.csv'))
+        tag_df = pd.read_csv(os.path.join(input_data_folder, 'tags.csv'))
         if self.add_link:
-            link_df = pd.read_csv('ml-20m/links.csv')
+            link_df = pd.read_csv(os.path.join(input_data_folder, 'links.csv'))
         tag_df.drop(columns=['timestamp'], inplace=True)
         mov_rat = pd.merge(mov_df, rat_df, on='movieId')
         del mov_df, rat_df
