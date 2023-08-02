@@ -6,7 +6,7 @@ from sklearn.neighbors import NearestNeighbors
 from joblib import dump, load
 
 
-from model_job.utils.path import model_folder
+from utils.path import model_folder
 
 
 class UserModel:
@@ -77,10 +77,10 @@ class UserModel:
         rating_matrix = self.prepare_data(df)
         model = NearestNeighbors(metric='cosine', algorithm='brute', n_neighbors=n_neighbors)
         model.fit(rating_matrix)
-        dump(model, os.path.join(model_folder,'movie_model.joblib'))
+        dump(model, os.path.join(model_folder,'user_model.joblib'))
 
     def get_similar_users(self,df, user, num_recommendations=5):
-        model = load(os.path.join(model_folder, 'movie_model.joblib'))
+        model = load(os.path.join(model_folder, 'user_model.joblib'))
         distances, indices = model.kneighbors(df[df.index == user], n_neighbors=num_recommendations+1)
         users = []
         for i in range(1, len(distances[0])):
@@ -116,7 +116,7 @@ class UserModel:
 
     def evaluate(self,df: pd.DataFrame, user_id: int, num_recommendations: int):
         """
-        Evaluate the model's recommendations by comparing them to actual ratings.
+        Evaluate the model's recommendations by calculating the average rating of recommended movies.
 
         Args:
             df (pandas.DataFrame): The input DataFrame containing movie ratings data with columns 'movieId', 'rating', and 'userId'.

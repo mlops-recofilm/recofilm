@@ -1,7 +1,7 @@
 import os
-from model_job.utils.utils import make_directory
+from utils.utils import make_directory
 
-SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SRC_DIR)
 DOCKER_VOLUME = os.path.join(ROOT_DIR, "docker_volume")
 make_directory(DOCKER_VOLUME)

@@ -6,7 +6,7 @@ from sklearn.neighbors import NearestNeighbors
 from joblib import dump, load
 
 
-from model_job.utils.path import model_folder
+from utils.path import model_folder
 
 
 class MovieModel:
