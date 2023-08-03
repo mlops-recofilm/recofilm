@@ -14,7 +14,7 @@ train, test, title_dict = split_data_random(df)
 MovieModel().fit(df, 10)
 title = 'Star Wars: Episode IV - A New Hope (1977)'
 score, recommendations = MovieModel().evaluate(df, title, 10, title_dict)
-#MovieModel().stability(df, title, 10, title_dict)
+
 #MovieModel().prediction_comparaison(df, ['Star Wars: Episode IV - A New Hope (1977)', 'Junior (1994)', 'Interview with the Vampire: The Vampire Chronicles (1994)'], 10, title_dict)
 print(recommendations)
 print(score)
