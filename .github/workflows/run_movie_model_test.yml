@@ -23,5 +23,5 @@ jobs:
         
     - name: Run tests model
       run: |
-        cd recofilm/test_unitaires
+        cd test_unitaires
         pytest movie_model_test.py
