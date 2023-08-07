@@ -146,7 +146,7 @@ class MovieModel:
         dict_stability = {k:v for k,v in zip(arr, count)}
         print(dict_stability)
 
-        base_dir = Path(__file__).resolve().parent.parent.parent  # Naviguez jusqu'au dossier \recofilm
+        base_dir = Path(__file__).resolve().parent.parent.parent  
         save_path = base_dir / "test_unitaires" / "kpi_movie_model" / "dict_stability.pkl"
         
         with open(save_path, 'wb') as f:
@@ -175,7 +175,7 @@ class MovieModel:
         count = count/len(movie_title)
         dict_pred_compar = {k:v for k,v in zip(arr, count)}
         print(dict_pred_compar)
-        base_dir = Path(__file__).resolve().parent.parent.parent  # Naviguez jusqu'au dossier \recofilm
+        base_dir = Path(__file__).resolve().parent.parent.parent  
         save_path = base_dir / "test_unitaires" / "kpi_movie_model" / "dict_prediction_comparaison.pkl"
         
         with open(save_path, 'wb') as f:
