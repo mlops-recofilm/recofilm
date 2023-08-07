@@ -1,19 +1,17 @@
 name: Run Tests
 
-on:
-  push:
-    paths:
-      - 'recofilm/**'
+
+on: [push]
+
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v2
 
-    - name: Set up Python 3.10
+    - name: Set up Python 3.9
       uses: actions/setup-python@v2
       with:
         python-version: 3.10
@@ -23,7 +21,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install pytest
         
-    - name: Run tests
+    - name: Run tests model
       run: |
         cd recofilm/test_unitaires
         pytest movie_model_test.py
