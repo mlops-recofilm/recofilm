@@ -4,7 +4,8 @@ import os
 from scipy.sparse import csr_matrix
 from sklearn.neighbors import NearestNeighbors
 from joblib import dump, load
-
+import pickle
+from pathlib import Path
 
 from utils.path import model_folder
 
@@ -145,6 +146,12 @@ class MovieModel:
         dict_stability = {k:v for k,v in zip(arr, count)}
         print(dict_stability)
 
+        base_dir = Path(__file__).resolve().parent.parent.parent  # Naviguez jusqu'au dossier \recofilm
+        save_path = base_dir / "test_unitaires" / "kpi_movie_model" / "dict_stability.pkl"
+        
+        with open(save_path, 'wb') as f:
+            pickle.dump(dict_stability, f)
+
     def prediction_comparaison(self,df: pd.DataFrame, movie_title: list[str], num_recommendations: int, title_dict: dict):
         """
         Compare movie recommendations for multiple movie titles.
@@ -166,7 +173,12 @@ class MovieModel:
             i+=1
         arr, count = np.unique(recommendations, return_counts=True)
         count = count/len(movie_title)
-        dict_stability = {k:v for k,v in zip(arr, count)}
-        print(dict_stability)
+        dict_pred_compar = {k:v for k,v in zip(arr, count)}
+        print(dict_pred_compar)
+        base_dir = Path(__file__).resolve().parent.parent.parent  # Naviguez jusqu'au dossier \recofilm
+        save_path = base_dir / "test_unitaires" / "kpi_movie_model" / "dict_prediction_comparaison.pkl"
+        
+        with open(save_path, 'wb') as f:
+            pickle.dump(dict_pred_compar, f)
 
 
