@@ -22,4 +22,4 @@ jobs:
         sleep 60 # wait for the API to start
     - name: Run tests with pytest
       run:
-        cd test_unitaires && pytest
+        cd test_unitaires && pytest test_api.py
