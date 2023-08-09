@@ -4,7 +4,8 @@ import os
 from scipy.sparse import csr_matrix
 from sklearn.neighbors import NearestNeighbors
 from joblib import dump, load
-
+from pathlib import Path
+import pickle
 
 from utils.path import model_folder
 
@@ -156,6 +157,12 @@ class UserModel:
         count = count/100
         dict_stability = {k:v for k,v in zip(arr, count)}
         print(dict_stability)
+        base_dir = Path(__file__).resolve().parent.parent.parent  
+        save_path = base_dir / "test_unitaires" / "kpi_user_model" / "dict_stability.pkl"
+        
+        with open(save_path, 'wb') as f:
+            pickle.dump(dict_stability, f)
+        
 
     def prediction_comparaison(self,df: pd.DataFrame, users_id: list[int], num_recommendations: int):
         """
@@ -177,7 +184,15 @@ class UserModel:
             i+=1
         arr, count = np.unique(recommendations, return_counts=True)
         count = count/len(users_id)
-        dict_stability = {k:v for k,v in zip(arr, count)}
-        print(dict_stability)
+        dict_pred_compar = {k:v for k,v in zip(arr, count)}
+        print(dict_pred_compar)
+        base_dir = Path(__file__).resolve().parent.parent.parent  
+        save_path = base_dir / "test_unitaires" / "kpi_user_model" / "dict_prediction_comparaison.pkl"
+        
+        with open(save_path, 'wb') as f:
+            pickle.dump(dict_pred_compar, f)
+
+            
+
 
 
