@@ -7,7 +7,7 @@ from joblib import dump, load
 import pickle
 from pathlib import Path
 
-from utils.path import model_folder
+from utils.path import model_folder, movie_model_unittest_folder
 
 
 class MovieModel:
@@ -124,7 +124,7 @@ class MovieModel:
 
     def stability(self,df: pd.DataFrame, movie_title: str, num_recommendations: int, title_dict: dict):
         """
-        Assess the stability of the recommendations for a given movie.
+        Assess the stability of the recommendations for a given movie and save results.
 
         Args:
             df (pandas.DataFrame): The input DataFrame containing movie ratings data with columns 'movieId', 'rating', and 'userId'.
@@ -146,15 +146,12 @@ class MovieModel:
         dict_stability = {k:v for k,v in zip(arr, count)}
         print(dict_stability)
 
-        base_dir = Path(__file__).resolve().parent.parent.parent  
-        save_path = base_dir / "test_unitaires" / "kpi_movie_model" / "dict_stability.pkl"
-        
-        with open(save_path, 'wb') as f:
+        with open(os.path.join(movie_model_unittest_folder, "dict_stability.pkl"), 'wb') as f:
             pickle.dump(dict_stability, f)
 
     def prediction_comparaison(self,df: pd.DataFrame, movie_title: list[str], num_recommendations: int, title_dict: dict):
         """
-        Compare movie recommendations for multiple movie titles.
+        Compare movie recommendations for multiple movie titles and save results.
 
         Args:
             df (pandas.DataFrame): The input DataFrame containing movie ratings data with columns 'movieId', 'rating', and 'userId'.
@@ -175,10 +172,7 @@ class MovieModel:
         count = count/len(movie_title)
         dict_pred_compar = {k:v for k,v in zip(arr, count)}
         print(dict_pred_compar)
-        base_dir = Path(__file__).resolve().parent.parent.parent  
-        save_path = base_dir / "test_unitaires" / "kpi_movie_model" / "dict_prediction_comparaison.pkl"
-        
-        with open(save_path, 'wb') as f:
+        with open(os.path.join(movie_model_unittest_folder, "dict_prediction_comparaison.pkl"), 'wb') as f:
             pickle.dump(dict_pred_compar, f)
 
 
