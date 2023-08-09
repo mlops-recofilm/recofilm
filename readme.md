@@ -41,6 +41,11 @@ git clone https://github.com/mlops-recofilm/recofilm.git
 cd recofilm
 ```
 
+2. Run docker-compose:
+```
+docker-compose up -d
+```
+
 ## Architecture 
 
 ```
