@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 from enum import Enum
 from fastapi import FastAPI, HTTPException, status, Depends, Header, Query
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -6,8 +7,9 @@ import pandas as pd
 from pydantic import BaseModel
 from typing import List, Optional, Annotated
 from scipy.sparse import csr_matrix
+import sys
+sys.path.append('..')
 from utils.path import data_folder
-
 
 
 DATA_PATH = os.path.join(data_folder,'data_api.csv')

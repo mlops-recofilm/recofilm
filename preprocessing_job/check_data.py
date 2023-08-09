@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import glob
 import os
-
 from utils.path import input_data_folder, output_folder
 
 
