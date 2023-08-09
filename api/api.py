@@ -2,6 +2,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi import FastAPI, HTTPException, Response, status, Depends, Header, Query
 import json
 import os
+import numpy as np
 import random
 from joblib import load
 import sys
@@ -96,8 +97,9 @@ def random_output(query_params: dict = Depends(query_params)):
     """
     unseen_movies = get_unseen_movies(data, query_params['user_id'], query_params['subject'])
     random_movie = random.choice(unseen_movies)
+    print(random_movie)
     save_reco(int(query_params['user_id']), random_movie)
-    return {"movie": [k for k, v in title_dict.items() if v == random_movie][0]}
+    return {"movie": [k for k, v in title_dict.items() if v == random_movie], 'ids': random_movie}
 
 
 @app.get("/movie_model", tags=['model'])
@@ -117,11 +119,44 @@ def movie_model(query_params: dict = Depends(query_params)):
     unseen_movies = get_unseen_movies(data.iloc[indices[0]], query_params['user_id'], query_params['subject'])
     random_movie = random.choice(unseen_movies)
     save_reco(int(query_params['user_id']), random_movie)
-    return {"movie": [k for k, v in title_dict.items() if v == random_movie][0]}
+    return {"movie": [k for k, v in title_dict.items() if v == random_movie], 'ids': random_movie}
+
+@app.get("/user_model", tags=['model'])
+def movie_model(query_params: dict = Depends(query_params)):
+    """
+    Generate a random movie recommendation using the movie recommendation model.
+
+    Args:
+        query_params (dict): The query parameters containing 'user_id' and 'movie_name'.
+
+    Returns:
+        dict: A dictionary containing a key 'movie' with the recommended movie title.
+    """
+    model = load(os.path.join(model_folder, 'user_model.joblib'))
+    distances, indices = model.kneighbors(user_data[user_data.index == int(query_params['user_id'])], n_neighbors=10 + 1)
+    similar_user_list = []
+    for i in range(1, len(distances[0])):
+        user = user_data.index[indices[0][i]]
+        similar_user_list.append(user)
+    indices = indices.flatten()[1:]
+    weightage_list = distances.flatten()[1:] / np.sum(distances.flatten()[1:])
+    unseen_movies = get_unseen_movies(data.iloc[indices[0]], query_params['user_id'], query_params['subject'])
+    random_movie = random.choice(unseen_movies)
+    mov_rtngs_sim_users = user_data.values[indices]
+    movies_list = user_data.columns
+    weightage_list = weightage_list[:, np.newaxis] + np.zeros(len(movies_list))
+    new_rating_matrix = weightage_list * mov_rtngs_sim_users
+    mean_rating_list = new_rating_matrix.sum(axis=0)
+    n = min(len(mean_rating_list), 10)
+    unseen_movies = get_unseen_movies(data.iloc[list(movies_list[np.argsort(mean_rating_list)[::-1][:n]])], query_params['user_id'], query_params['subject'])
+    random_movie = random.choice(unseen_movies)
+
+    save_reco(int(query_params['user_id']), random_movie)
+    return {"movie": [k for k, v in title_dict.items() if v == random_movie], 'ids': random_movie}
 
 
 @app.get("/remindMe/{k}", tags=['historical'])
-def remind_reco(k: int, userid: Annotated[str, Depends(get_user_credentials)]) -> List[str]:
+def remind_reco(k: int, userid: Annotated[str, Depends(get_user_credentials)]) -> dict[str, list[str]]:
     """
     Get the last k unique recommended movies for a user.
 
@@ -130,7 +165,7 @@ def remind_reco(k: int, userid: Annotated[str, Depends(get_user_credentials)]) -
         userid (str): The user ID.
 
     Returns:
-        List[str]: A list of last unique recommended movie titles.
+        Dict[str, List[str]]: A dictionary containing a list of last unique recommended movie titles.
     """
 
     with open(os.path.join(output_folder,"predictions_history.json"), "r") as f:
@@ -138,10 +173,11 @@ def remind_reco(k: int, userid: Annotated[str, Depends(get_user_credentials)]) -
     list_movies = recommended_movies[str(userid)]['movies']
     j=k
     last_unique_k = []
-    while len(last_unique_k) < k and j < len(list_movies):
+    while len(last_unique_k) < k or len(list(set(list_movies[-j:])))==0:
         last_unique_k = list(set(list_movies[-j:]))
         j += 1
-    return {"movie": [k for k, v in title_dict.items() if v in last_unique_k]}
+    filtered_titles = [title for title, movie_id in title_dict.items() if movie_id in last_unique_k]
+    return {"movie": filtered_titles, 'ids': last_unique_k}
 
 
 @app.post("/addRating", tags=['add data'])

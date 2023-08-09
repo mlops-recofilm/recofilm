@@ -1,6 +1,8 @@
 import os
 import json
 import base64
+import time
+
 import pandas as pd
 import requests
 import streamlit as st
@@ -15,9 +17,11 @@ from utils.path import output_folder
 
 #baseurl = os.environ['api_address']
 baseurl = 'http://localhost:8000/'
+st.set_page_config(layout="wide", page_title="Movie recommender")
+
+
 with open('config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
-st.set_page_config(layout="wide", page_title="Movie recommender")
 
 res = requests.get(url=f"{baseurl}unique_genres")
 genres_list =res.json()["genres"]
@@ -51,8 +55,26 @@ if authentication_status:
         "Authorization": f"Basic {base64_credentials}"
     }
     authenticator.logout('Logout', 'main')
-    st.write(f'Welcome *{name}*')
+
+    st.title(f"Welcome *{name}* to your Personalized Movie Recommendations!")
+    st.write("Hello there, Movie Enthusiast!")
+    st.write(
+        "Welcome to our personalized movie recommendation experience. We're excited to help you discover your next favorite film. Here's a quick guide to get you started:")
+    st.write(
+        "1. **User Model:** With this option, we tailor recommendations based on your unique preferences and past predictions. It's like having your very own movie oracle!")
+    st.write(
+        "2. **Movie Model:** Feeling adventurous? Choose a specific movie, and we'll suggest similar titles that are right up your alley.")
+    st.write(
+        "3. **Random Model:** Ready for a surprise? Try our random movie recommendations. You never know what cinematic gem you might uncover!")
+    st.write(
+        "**Genre Selection:** Don't forget to select your favorite genres. Whether you're into action-packed thrillers, heartwarming comedies, captivating dramas, or mind-bending sci-fi, we've got you covered.")
+    st.write(
+        "**Remind Me:** Want to revisit your previous predictions? Use the slider to choose how many recommendations you'd like us to remind you of.")
+    st.write(
+        "**Let's Get Started:** Dive in by selecting a model, picking your preferred genres, and exploring the world of movies that await you. Don't hesitate to click the 'Random movie' button or choose a specific movie to see what we have in store for you.")
+    st.write("Lights, camera, action! 🍿🎬")
     with st.sidebar:
+        reminde_me = st.slider('Reminde me my last predictions', 0, 20, 0)
         type_model = st.radio(
             "Choose your model",
             ('User model', 'Movie model'))
@@ -67,23 +89,34 @@ if authentication_status:
                 res = requests.get(
                     url=f"{baseurl}random?user_id={userid}")
             reco_movie = res.json()["movie"]
-    if type_model == 'Movie model':
-        movie = st.selectbox(
-            'Choose a movie',
-            movies_list)
-        if genres:
-            res = requests.get(
-                url=f"{baseurl}movie_model?user_id={userid}&subject={'&subject='.join(genres)}&movie_name={movie}")
-        else:
-            res = requests.get(
-                url=f"{baseurl}movie_model?user_id={userid}&movie_name={movie}")
+            reco_ids = res.json()["ids"]
+        if type_model == 'Movie model':
+            movie = st.selectbox(
+                'Choose a movie',
+                movies_list)
+            if genres:
+                res = requests.get(
+                    url=f"{baseurl}movie_model?user_id={userid}&subject={'&subject='.join(genres)}&movie_name={movie}")
+            else:
+                res = requests.get(
+                    url=f"{baseurl}movie_model?user_id={userid}&movie_name={movie}")
+            reco_movie = res.json()["movie"]
+            reco_ids = res.json()["ids"]
+    if reminde_me>0:
+        res = requests.get(f"{baseurl}remindMe/{reminde_me}", headers=headers)
         reco_movie = res.json()["movie"]
+        reco_ids = res.json()["ids"]
+    try:
+        reco_movie = res.json()["movie"]
+        reco_ids = res.json()["ids"]
+    except:
+        pass
 
     def data_upload():
         try:
-            df = pd.DataFrame({'movie': [reco_movie], 'rating': None})
-        except NameError:
-            df = pd.DataFrame({'movie': [''], 'rating': None})
+            df = pd.DataFrame({'movie': reco_movie,'ids':reco_ids, 'rating': ["-"]*len(reco_movie)})
+        except:
+            df = pd.DataFrame({'movie': [''],'ids':[''],  'rating': None})
         return df
 
     def show_grid():
@@ -111,9 +144,10 @@ if authentication_status:
             "rating",
             editable=True,
             cellEditor="agSelectCellEditor",
-            cellEditorParams={"values": ["1", "2", "3", "4", "5"]},
+            cellEditorParams={"values": ["0","1", "2", "3", "4", "5"]},
         )
         gb.configure_grid_options(autoSizeColumn=True, autoHeight=True)
+        gb.configure_column("ids", hide=True)
 
         gridOptions = gb.build()
 
@@ -131,27 +165,14 @@ if authentication_status:
 
     def update(grid_table):
         data = grid_table["data"]
-        st.write(grid_table["data"]
-                 .loc[
-                     (grid_table["data"]["rating"] != ""),
-                     ["id", "tag understandable", "User category"],
-                 ]
-                 .to_dict(orient="list"))
-        res = requests.post(
-            url=f"{url}update_{type_perf}_data",
-            headers={
-                'Content-type': 'application/json'
-            },
-            json={"data": grid_table["data"]
-                .loc[
-                (grid_table["data"]["tag understandable"] != "-")
-                | (grid_table["data"]["User category"] != "-"),
-                ["id", "tag understandable", "User category"],
-            ]
-                .to_dict(orient="list")
-                  }
-
-        )
+        movies_id = grid_table["data"].loc[grid_table["data"]["rating"] != "-"].to_dict(orient="list")
+        for movie, ids, rating in zip(movies_id["movie"], movies_id["ids"], movies_id["rating"]):
+            st.write(rating)
+            st.write(ids)
+            time.sleep(3)
+            res = requests.post(
+                url=f"{baseurl}addRating?movieid={ids}&rating={rating}",
+                headers=headers)
 
 
     grid_table = show_grid()
