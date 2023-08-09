@@ -7,8 +7,6 @@ import pandas as pd
 from pydantic import BaseModel
 from typing import List, Optional, Annotated
 from scipy.sparse import csr_matrix
-import sys
-sys.path.append('..')
 from utils.path import data_folder
 
 
@@ -19,6 +17,16 @@ security = HTTPBasic()
 
 
 def get_data(data_path=DATA_PATH):
+    """
+    Load and prepare the movie ratings data.
+
+    Args:
+        data_path (str): The path to the movie ratings data CSV file.
+
+    Returns:
+        tuple: A tuple containing the movie ratings data DataFrame, movie data sparse CSR matrix,
+               user data sparse CSR matrix, and a dictionary mapping movie titles to IDs.
+    """
     data = pd.read_csv(data_path)
     df = data[['movieId', 'rating', 'userId']].drop_duplicates()
     rating_matrix = df.pivot(index='movieId', columns='userId', values='rating').fillna(0)
@@ -32,7 +40,14 @@ def get_data(data_path=DATA_PATH):
 def get_user_credentials(
     credentials: Annotated[HTTPBasicCredentials, Depends(security)]
 ):
-    """Checks user's credentials - authentification_dict is used as a user database.
+    """
+    Validate user credentials.
+
+    Args:
+        credentials (HTTPBasicCredentials): The HTTP basic authentication credentials.
+
+    Returns:
+        str: The validated user ID.
     """
     data = get_data()
     # check that credentials.username exists in DB
@@ -52,24 +67,29 @@ async def query_params(
     movie_name: Optional[str] = None,
 ):
     """
-    Returns a dictionary containing the given `use` parameter and an optional `subject` list.
+    Parse and return query parameters.
 
     Args:
-        user_id : str
-            The user_id
-        subject : Optional[List[str]], default=None
-            An optional list of subject strings to filter genres by.
-        movie_name : Optional[str], default=None
-            An optional str of movie.
+        user_id (str): The user ID.
+        subject (Optional[List[str]]): An optional list of subject strings to filter genres by.
+        movie_name (Optional[str]): An optional movie name.
+
     Returns:
-        Dict[str, Union[str, List[str]]]
-            A dictionary containing the given `use` and optional `subject` parameters.
+        Dict[str, Union[str, List[str]]]: A dictionary containing the parsed query parameters.
     """
     return {"user_id": user_id, "subject": subject, 'movie_name': movie_name}
 
 
 def get_GenreEnum(df) -> Enum:
-    """Enumeration for possible values of genre"""
+    """
+    Generate an enumeration for possible values of genre.
+
+    Args:
+        df (pd.DataFrame): The movie ratings data DataFrame.
+
+    Returns:
+        Enum: An enumeration containing genre values.
+    """
     genres_set = []
     for genres in df['genres'].unique():
         genres_set.extend(genres.split('|'))
@@ -78,6 +98,17 @@ def get_GenreEnum(df) -> Enum:
 
 
 def get_unseen_movies(df, user_id, genres):
+    """
+    Get a list of unseen movies for a user.
+
+    Args:
+        df (pd.DataFrame): The movie ratings data DataFrame.
+        user_id (str): The user ID.
+        genres (List[str]): A list of genres to filter movies by.
+
+    Returns:
+        List[int]: A list of movie IDs that are unseen by the user.
+    """
     if genres:
         df = df.loc[(df['genres'].str.contains('|'.join(genres)))]
     user_movies = df[df['userId'] == int(user_id)]['movieId'].unique()
@@ -88,13 +119,26 @@ def get_unseen_movies(df, user_id, genres):
 
 
 class RatingsItem(BaseModel):
-    """New question structure"""
+    """
+    Represents new movie ratings provided by a user.
+    """
     movieid: List[int]
-    # title: str # letting users input movie if only
     rating: List[float] = [5]
 
 
 def add_ratings(userid: str, movieids: List[str], ratings: List[float], file_path = '../ml-20m/'):
+    """
+    Add new movie ratings for a user.
+
+    Args:
+        userid (str): The user ID.
+        movieids (List[str]): A list of movie IDs.
+        ratings (List[float]): A list of movie ratings.
+        file_path (str): The file path for storing the new ratings data.
+
+    Returns:
+        bool: True if the ratings were added successfully, False otherwise.
+    """
     if not isinstance(movieids, list): movieids = [movieids]
     if not isinstance(ratings, list): ratings = [ratings]
 
