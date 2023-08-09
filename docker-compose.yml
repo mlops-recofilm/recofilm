@@ -1,0 +1,74 @@
+version: "3.9"
+services:
+  preprocessing_job:
+    build:
+      context: preprocessing_job/
+    container_name: preprocessing_job
+    networks:
+      - my_network_from_compose
+    volumes:
+      - "./docker_volume:/code/preprocessing_job/docker_volume/"
+      - "./utils:/code/preprocessing_job/utils/"
+
+  model_job:
+    build:
+      context: model_job/
+    container_name: model_job
+    networks:
+      - my_network_from_compose
+    depends_on:
+      - data_check
+    volumes:
+      - "./docker_volume:/code/model_job/docker_volume/"
+      - "./utils:/code/model_job/utils/"
+
+  fastapi:
+    build:
+      context: api/
+    container_name: my_api
+    networks:
+      - my_network_from_compose
+    ports:
+      - "8000:8000"
+    volumes:
+      - "./docker_volume:/code/api/docker_volume/"
+      - "./utils:/code/api/utils/"
+    depends_on:
+      - model_job
+      - model_check
+    healthcheck:
+      test: curl --fail http://localhost/status || exit 0
+      interval: 2s
+      retries: 3
+      start_period: 2s
+      timeout: 1s
+  streamlit:
+    build:
+      context: streamlit_job/
+    container_name: streamlit
+    networks:
+      - my_network_from_compose
+    ports:
+      - "8501:8501"
+    environment:
+      - api_address=http://my_api:8000/
+    volumes:
+      - "./docker_volume:/code/streamlit_job/docker_volume/"
+      - "./utils:/code/streamlit_job/utils/"
+    depends_on:
+      fastapi:
+        condition: service_healthy
+  data_check:
+    image: alpine:latest
+    command: sh -c "while [ ! -f code/docker_volume/data/data_api.csv ]; do sleep 1; done"
+    volumes:
+      - "./docker_volume:/code/docker_volume/"
+  model_check:
+    image: alpine:latest
+    command: sh -c "while [ ! -f code/docker_volume/model_folder/movie_model.joblib ]; do sleep 1; done"
+    volumes:
+      - "./docker_volume:/code/docker_volume/"
+
+
+networks:
+  my_network_from_compose:
