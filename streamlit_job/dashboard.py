@@ -32,7 +32,7 @@ authenticator = stauth.Authenticate(
 
 name, authentication_status, username = authenticator.login('Login', 'main')
 
-with open(os.path.join(output_folder, "mapping_usernam_user_id.json"), "r") as f:
+with open(os.path.join(output_folder, "mapping_username_user_id.json"), "r") as f:
     mapping_userid = json.loads(f.read())
 
 if authentication_status:

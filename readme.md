@@ -78,11 +78,11 @@ cd recofilm
 │   ├── model_folder
 │   │   ├── movie_model.joblib
 │   │   └── user_model.joblib
-│   ├── next_new_userid
 │   └── outputs
-│       ├── mapping_usernam_user_id.json
+│       ├── mapping_username_user_id.json
 │       ├── predictions_history.json
 │       └── rapport.txt
+│       └── next_new_userid
 ├── model_job
 │   ├── Dockerfile
 │   ├── __init__.py
