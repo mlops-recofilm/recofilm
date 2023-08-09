@@ -2,17 +2,15 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi import FastAPI, HTTPException, Response, status, Depends, Header, Query
 import json
 import os
-from typing import List, Optional, Annotated
 import random
 from joblib import load
-# import uvicorn
 
-from utils import *
+from utils.path import model_folder
+from api_utils.utils import *
 
-
-model_folder = '../docker_volume/model_folder'
 
 data, movie_data, user_data, title_dict = get_data()
+
 
 def get_next_new_userid():
     NEXT_NEW_USERID = os.getenv('NEXT_NEW_USERID')
@@ -21,18 +19,6 @@ def get_next_new_userid():
         os.environ['NEXT_NEW_USERID'] = str(NEXT_NEW_USERID)
     return NEXT_NEW_USERID
 
-# print(NEXT_NEW_USERID)
-
-
-# # Set environment variables
-# os.environ['NEXT_NEW_USERID'] = str(data.userId.max() + 1)
-
-# print('NEXT_USERID' in os.environ)
-# # Get environment variables
-# NEXT_USERID = os.getenv('NEXT_USERID')
-# print('NEXT_USERID',NEXT_USERID)
-# NEXT_NEW_USERID = os.getenv('NEXT_NEW_USERID')
-# print('NEXT_NEW_USERID',NEXT_NEW_USERID)
 
 app = FastAPI(
     title="Reco API",
@@ -53,7 +39,7 @@ app.state.NEW_USERID = -1
 
 GenreEnum = get_GenreEnum(data)
 
-# Route de base pour vérifier le fonctionnement de l'API
+
 @app.get("/", tags=['home'])
 def read_root():
     """
@@ -64,6 +50,17 @@ def read_root():
     """
     return {"message": "API is up and running"}
 
+
+@app.get("/unique_genres", tags=['utils'])
+def unique_genres():
+    all_genres = data['genres'].str.split('|', expand=True).stack().tolist()
+    unique_genres = sorted(set(all_genres))
+    return {"genres": unique_genres}
+
+@app.get("/unique_movies", tags=['utils'])
+def unique_movies():
+    all_movies = data['title'].unique().tolist()
+    return {"movies": all_movies}
 
 @app.get("/random", tags=['model'])
 def random_output(query_params: dict = Depends(query_params)):
@@ -80,6 +77,7 @@ def random_output(query_params: dict = Depends(query_params)):
     unseen_movies = get_unseen_movies(data.iloc[indices[0]], query_params['user_id'], query_params['subject'])
     random_movie = random.choice(unseen_movies)
     return {"movie": [k for k, v in title_dict.items() if v == random_movie][0]}
+
 
 @app.get("/remindMe/{k}", tags=['historical'])
 def remind_reco(k: int, userid: Annotated[str, Depends(get_user_credentials)]) -> List[str]:
@@ -140,22 +138,6 @@ def create_user(new_ratings: RatingsItem) -> int:
             detail=f"Movie with id {movieid} doesn't exist, please enter an existing movie",
         )
 
-    # # version 1
-    # next_new_userid = get_next_new_userid()
-    # # add new ratings
-    # add_ratings(userid=next_new_userid, movieids=new_ratings.movieid, ratings=new_ratings.rating) # next_new_userid
-    
-    # # update NEXT_NEW_USERID for next users
-    # os.environ['NEXT_NEW_USERID'] = str(int(os.getenv('NEXT_NEW_USERID')) + 1)
-    
-    # # version 2
-    # if app.state.NEW_USERID == -1:
-    #     app.state.NEW_USERID = data.userId.max() + 1
-    # add_ratings(userid=app.state.NEW_USERID, movieids=new_ratings.movieid, ratings=new_ratings.rating) # next_new_userid
-    # app.state.NEW_USERID += 1
-    # return app.state.NEW_USERID - 1
-
-    # version 3
     with open("../docker_volume/next_new_userid", "r+") as next_new_userid_file:
         next_new_userid = next_new_userid_file.read()
         next_new_userid = int(next_new_userid)

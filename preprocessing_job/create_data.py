@@ -1,7 +1,8 @@
 import pandas as pd
 import os
 import gc
-
+import sys
+sys.path.append('..')
 
 from utils.path import data_folder, input_data_folder
 
