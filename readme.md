@@ -13,13 +13,8 @@ Recommender systems are built on MovieLens dataset with 100,000 movie ratings. T
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Architecture](#architecture)
-- [Usage](#usage)
-- [Data Preparation](#data-preparation)
-- [Model Training](#model-training)
-- [Movie Recommendations](#movie-recommendations)
-- [Evaluation](#evaluation)
-- [Stability Analysis](#stability-analysis)
-- [Prediction Comparison](#prediction-comparison)
+- [Model](#model)
+- [Unittest and Github Action](#unittest-and-github-action)
 - [API Usage](#api-usage)
 - [License](#license)
 
@@ -78,11 +73,18 @@ cd recofilm
 │   ├── model_folder
 │   │   ├── movie_model.joblib
 │   │   └── user_model.joblib
-│   └── outputs
-│       ├── mapping_username_user_id.json
-│       ├── predictions_history.json
-│       └── rapport.txt
-│       └── next_new_userid
+│   ├── outputs
+│   │   ├── mapping_username_user_id.json
+│   │   ├── next_new_userid
+│   │   ├── predictions_history.json
+│   │   └── rapport.txt
+│   └── unittest
+│       ├── kpi_movie_model
+│       │   ├── dict_prediction_comparaison.pkl
+│       │   └── dict_stability.pkl
+│       └── kpi_user_model
+│           ├── dict_prediction_comparaison.pkl
+│           └── dict_stability.pkl
 ├── model_job
 │   ├── Dockerfile
 │   ├── __init__.py
@@ -109,12 +111,13 @@ cd recofilm
 │   ├── config.yaml
 │   ├── dashboard.py
 │   └── streamlit_requierements.txt
+├── test_unitaires
+│   ├── movie_model_test.py
+│   └── user_model_test.py
 └── utils
     ├── __init__.py
     ├── path.py
     └── utils.py
-
-15 directories, 53 files
 
 ```
 ![Architecture](Images/reco_diagram.png)
@@ -156,54 +159,20 @@ The `docker-compose.yml` file helps manage the execution of different project pa
 
 ## Model 
 
-### Usage
 
-1. Load the movie ratings data into a pandas DataFrame. The data should contain at least the following columns: 'movieId', 'rating', and 'userId'.
+![Model](Images/coll-cont-pic.png)
 
-2. Instantiate the `MovieModel` class.
+### Content based recommender system
+This approach utilizes a series of discrete characteristics of an item in order to recommend additional items with similar properties. Content-based filtering methods are based on a description of the item and a profile of the user's preferences. To keep it simple, it will suggest you similar movies based on the movie we give (movie name would be the input) or based on all of the movies watched by a user (user is the input). It extracts features of a item and it can also look at the user's history to make the suggestions.
 
-3. Prepare the data using the `prepare_data` method.
-
-4. Fit the model using the `fit` method with the DataFrame and the number of neighbors to consider for recommendation.
-
-5. Generate movie recommendations using the `predict` method by providing a movie title, the number of recommendations to generate, and a dictionary mapping movie titles to their corresponding movie IDs.
-
-6. Optionally, evaluate the model's recommendations using the `evaluate` method.
-
-### Data Preparation
-
-Before using the recommendation system, make sure to load and prepare the movie ratings data. The data should be organized in a DataFrame with the following columns:
-
-- 'movieId': The unique identifier of the movie.
-- 'rating': The rating given by a user to a movie.
-- 'userId': The unique identifier of the user.
-
-You can use the provided functions `split_data_timestamp` or `split_data_random` to split the data into train and test sets for evaluation purposes.
-
-### Model Training
-
-To train the movie recommendation model, follow these steps:
-
-1. Load and prepare the movie ratings data.
-2. Instantiate the `MovieModel` class.
-3. Use the `prepare_data` method to prepare the data and create a sparse CSR matrix representation.
-4. Train the model using the `fit` method with the DataFrame and the number of neighbors to consider for recommendation.
-
-### Movie Recommendations
-
-To generate movie recommendations for a given movie title, use the `predict` method. Provide the movie title, the number of recommendations to generate, and a dictionary mapping movie titles to their corresponding movie IDs.
+### Collaborative recommender system
+Collaborative filtering is based on the assumption that people who agreed in the past will agree in the future, and that they will like similar kinds of items as they liked in the past. The system generates recommendations using only information about rating profiles for different users or items. By locating peer users/items with a rating history similar to the current user or item, they generate recommendations using this neighborhood. This approach builds a model from a user’s past behaviors (items previously purchased or selected and/or numerical ratings given to those items) as well as similar decisions made by other users. This model is then used to predict items (or ratings for items) that the user may have an interest in. Collaborative filtering methods are classified as memory-based and model-based.
 
 ### Evaluation
 
 To evaluate the model's recommendations, you can use the `evaluate` method. Provide the movie title, the number of recommendations to generate, and a dictionary mapping movie titles to their corresponding movie IDs. The method will calculate the average rating of recommended movies and return a list of recommended movie titles.
 
-### Stability Analysis
-
-The `stability` method allows you to assess the stability of the recommendations for a given movie. It generates recommendations multiple times (100 times in this implementation) and calculates the stability of each movie based on how frequently it appears in the recommendations.
-
-### Prediction Comparison
-
-The `prediction_comparison` method enables you to compare movie recommendations for multiple movie titles. Provide a list of movie titles, the number of recommendations to generate for each movie title, and a dictionary mapping movie titles to their corresponding movie IDs.
+## Unittest and Github Action
 
 ## API Usage
 

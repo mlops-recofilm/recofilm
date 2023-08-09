@@ -8,7 +8,7 @@ import pandas as pd
 from pydantic import BaseModel
 from typing import List, Optional, Annotated
 from scipy.sparse import csr_matrix
-from utils.path import data_folder, output_folder
+from utils.path import data_folder, output_folder, input_data_folder
 
 
 DATA_PATH = os.path.join(data_folder,'data_api.csv')
@@ -127,7 +127,7 @@ class RatingsItem(BaseModel):
     rating: List[float] = [5]
 
 
-def add_ratings(userid: str, movieids: List[str], ratings: List[float], file_path = '../ml-20m/'):
+def add_ratings(userid: str, movieids: List[str], ratings: List[float], file_path = input_data_folder):
     """
     Add new movie ratings for a user.
 
@@ -170,7 +170,7 @@ def save_reco(user_id: int, movie_id: int):
     with open(os.path.join(output_folder,"predictions_history.json"), "r") as f:
         recommended_movies = json.loads(f.read())
     if str(user_id) in recommended_movies:
-        if len(recommended_movies[str(user_id)])>100:
+        if len(recommended_movies[str(user_id)])>20:
             recommended_movies[str(user_id)]['dates'] = recommended_movies[str(user_id)]['dates'][1:]
             recommended_movies[str(user_id)]['movies'] = recommended_movies[str(user_id)]['movies'][1:]
         recommended_movies[str(user_id)]['movies'].append(movie_id)
