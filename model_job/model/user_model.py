@@ -7,7 +7,7 @@ from joblib import dump, load
 from pathlib import Path
 import pickle
 
-from utils.path import model_folder
+from utils.path import model_folder, user_model_unittest_folder
 
 
 class UserModel:
@@ -157,10 +157,7 @@ class UserModel:
         count = count/100
         dict_stability = {k:v for k,v in zip(arr, count)}
         print(dict_stability)
-        base_dir = Path(__file__).resolve().parent.parent.parent  
-        save_path = base_dir / "test_unitaires" / "kpi_user_model" / "dict_stability.pkl"
-        
-        with open(save_path, 'wb') as f:
+        with open(os.path.join(user_model_unittest_folder, "dict_stability.pkl"), 'wb') as f:
             pickle.dump(dict_stability, f)
         
 
@@ -186,10 +183,7 @@ class UserModel:
         count = count/len(users_id)
         dict_pred_compar = {k:v for k,v in zip(arr, count)}
         print(dict_pred_compar)
-        base_dir = Path(__file__).resolve().parent.parent.parent  
-        save_path = base_dir / "test_unitaires" / "kpi_user_model" / "dict_prediction_comparaison.pkl"
-        
-        with open(save_path, 'wb') as f:
+        with open(os.path.join(user_model_unittest_folder, "dict_prediction_comparaison.pkl"), 'wb') as f:
             pickle.dump(dict_pred_compar, f)
 
             
