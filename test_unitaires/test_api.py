@@ -1,7 +1,14 @@
+import sys
+import os
+current_directory = os.path.dirname(os.path.abspath(__file__))
+api_folder_path = os.path.join(current_directory, '..', 'api')
+sys.path.append(api_folder_path)
+
+
 import pytest
 import requests
 from fastapi.testclient import TestClient
-from api import app
+from api_recofilm import app
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from requests.auth import HTTPBasicAuth
 import time
