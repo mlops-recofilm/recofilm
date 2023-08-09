@@ -1,5 +1,6 @@
 from datetime import datetime
 import os
+import json
 from enum import Enum
 from fastapi import FastAPI, HTTPException, status, Depends, Header, Query
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -7,7 +8,7 @@ import pandas as pd
 from pydantic import BaseModel
 from typing import List, Optional, Annotated
 from scipy.sparse import csr_matrix
-from utils.path import data_folder
+from utils.path import data_folder, output_folder
 
 
 DATA_PATH = os.path.join(data_folder,'data_api.csv')
@@ -49,7 +50,7 @@ def get_user_credentials(
     Returns:
         str: The validated user ID.
     """
-    data = get_data()
+    data, movie_data, user_data, title_dict = get_data()
     # check that credentials.username exists in DB
     existing_users = data['userId'].unique()
     if not (int(credentials.username) in existing_users):
@@ -153,3 +154,29 @@ def add_ratings(userid: str, movieids: List[str], ratings: List[float], file_pat
     })
     new_ratings_df.to_csv(filename, index=False)
     return True
+
+
+def save_reco(user_id: int, movie_id: int):
+    """
+    Save movie recommendations for a user in a JSON file.
+
+    Args:
+        user_id (int): The user's identifier.
+        movie_id (int): The identifier of the recommended movie.
+
+    Returns:
+        None
+    """
+    with open(os.path.join(output_folder,"predictions_history.json"), "r") as f:
+        recommended_movies = json.loads(f.read())
+    if str(user_id) in recommended_movies:
+        if len(recommended_movies[str(user_id)])>100:
+            recommended_movies[str(user_id)]['dates'] = recommended_movies[str(user_id)]['dates'][1:]
+            recommended_movies[str(user_id)]['movies'] = recommended_movies[str(user_id)]['movies'][1:]
+        recommended_movies[str(user_id)]['movies'].append(movie_id)
+        recommended_movies[str(user_id)]['dates'].append(datetime.now().strftime("%m/%d/%Y"))
+    else:
+        recommended_movies[str(user_id)] = {"dates": [datetime.now().strftime("%m/%d/%Y")],
+                                            "movies":[movie_id]}
+    with open(os.path.join(output_folder,"predictions_history.json"), "w") as json_file:
+        json.dump(recommended_movies, json_file)

@@ -4,7 +4,8 @@ import json
 import os
 import random
 from joblib import load
-
+import sys
+sys.path.append('..')
 from utils.path import model_folder, output_folder
 from api_utils.utils import *
 
@@ -95,6 +96,7 @@ def random_output(query_params: dict = Depends(query_params)):
     """
     unseen_movies = get_unseen_movies(data, query_params['user_id'], query_params['subject'])
     random_movie = random.choice(unseen_movies)
+    save_reco(int(query_params['user_id']), random_movie)
     return {"movie": [k for k, v in title_dict.items() if v == random_movie][0]}
 
 
@@ -114,6 +116,7 @@ def movie_model(query_params: dict = Depends(query_params)):
     distances, indices = model.kneighbors(movie_data[movie_id], n_neighbors=10)
     unseen_movies = get_unseen_movies(data.iloc[indices[0]], query_params['user_id'], query_params['subject'])
     random_movie = random.choice(unseen_movies)
+    save_reco(int(query_params['user_id']), random_movie)
     return {"movie": [k for k, v in title_dict.items() if v == random_movie][0]}
 
 
@@ -132,14 +135,13 @@ def remind_reco(k: int, userid: Annotated[str, Depends(get_user_credentials)]) -
 
     with open(os.path.join(output_folder,"predictions_history.json"), "r") as f:
         recommended_movies = json.loads(f.read())
-
-    list_movies = recommended_movies[userid]['movies']
+    list_movies = recommended_movies[str(userid)]['movies']
     j=k
     last_unique_k = []
     while len(last_unique_k) < k and j < len(list_movies):
         last_unique_k = list(set(list_movies[-j:]))
         j += 1
-    return last_unique_k
+    return {"movie": [k for k, v in title_dict.items() if v in last_unique_k]}
 
 
 @app.post("/addRating", tags=['add data'])

@@ -12,7 +12,6 @@ credentials:
       email: rbriggs@gmail.com
       name: Rebecca Briggs
       password: $2b$12$f0xSNixz.H92AOfijbuuCe/kWm7sdUQjhI/grrpjumXscoEJ/60Dm
-      userid: 1741
 preauthorized:
   emails:
   - melsby@gmail.com
