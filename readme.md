@@ -2,6 +2,7 @@
 
 ## Project Overview
 
+This project aims to implement a movie recommendation system using various preprocessing steps, model building, and creating a user interface.
 This project implements a movie and a user recommendation system using collaborative filtering. The system is designed to suggest movies to users based on their historical movie ratings and similarities with other users.
 Recommender systems are built on MovieLens dataset with 100,000 movie ratings. These Recommender systems were built using Pandas operations and by fitting KNN to suggest movies for the users based on similar users.
 
@@ -11,6 +12,7 @@ Recommender systems are built on MovieLens dataset with 100,000 movie ratings. T
 - [Introduction](#introduction)
 - [Requirements](#requirements)
 - [Installation](#installation)
+- [Architecture](#architecture)
 - [Usage](#usage)
 - [Data Preparation](#data-preparation)
 - [Model Training](#model-training)
@@ -43,7 +45,114 @@ This recommendation system leverages collaborative filtering, a popular approach
 git clone https://github.com/mlops-recofilm/recofilm.git
 cd recofilm
 ```
+
+## Architecture 
+
+```
+.
+├── Images
+│   └── reco_diagram.png
+├── __init__.py
+├── api
+│   ├── Dockerfile
+│   ├── __init__.py
+│   ├── api.py
+│   ├── api_requirements.txt
+│   └── api_utils
+│       ├── __init__.py
+│       └── utils.py
+├── docker-compose.yml
+├── docker_volume
+│   ├── data
+│   │   ├── data_api.csv
+│   │   ├── final_False_0.3_50_5_False.csv
+│   │   └── merged_False_0.3_50_5_False.csv
+│   ├── inputs
+│   │   ├── README.txt
+│   │   ├── genome-scores.csv
+│   │   ├── genome-tags.csv
+│   │   ├── links.csv
+│   │   ├── movies.csv
+│   │   ├── ratings.csv
+│   │   └── tags.csv
+│   ├── model_folder
+│   │   ├── movie_model.joblib
+│   │   └── user_model.joblib
+│   ├── next_new_userid
+│   └── outputs
+│       ├── mapping_usernam_user_id.json
+│       ├── predictions_history.json
+│       └── rapport.txt
+├── model_job
+│   ├── Dockerfile
+│   ├── __init__.py
+│   ├── model
+│   │   ├── __init__.py
+│   │   ├── movie_model.py
+│   │   ├── user_model.py
+│   │   └── utils.py
+│   ├── model_requirements.txt
+│   ├── model_utils.py
+│   └── training_pipeline.py
+├── preprocessing_job
+│   ├── Dockerfile
+│   ├── __init__.py
+│   ├── check_data.py
+│   ├── create_data.py
+│   ├── main.py
+│   └── preprocessing_requirements.txt
+├── readme.md
+├── requirements.txt
+├── streamlit_job
+│   ├── Dockerfile
+│   ├── __init__.py
+│   ├── config.yaml
+│   ├── dashboard.py
+│   └── streamlit_requierements.txt
+└── utils
+    ├── __init__.py
+    ├── path.py
+    └── utils.py
+
+15 directories, 53 files
+
+```
 ![Architecture](Images/reco_diagram.png)
+
+### Folder Descriptions
+
+- `Images`: Contains images and diagrams used in documentation.
+- `api`: Holds code and resources for the recommendation API.
+- `docker_volume`: Directory used to store data, models, and generated outputs.
+- `model_job`: Implements the construction and training of recommendation models.
+- `preprocessing_job`: Performs preprocessing on raw data before model training.
+- `streamlit_job`: Creates a Streamlit-based user interface for interaction with recommendations.
+- `utils`: Contains shared utilities used throughout the project.
+
+### Docker Configuration
+
+The `docker-compose.yml` file helps manage the execution of different project parts and connects services together.
+
+### How to Use
+
+1. **Data Preprocessing** (`preprocessing_job`):
+   - Run `preprocessing_job/main.py` to perform preprocessing on raw data.
+
+2. **Model Building** (`model_job`):
+   - Build and train recommendation models by running `model_job/training_pipeline.py`.
+
+3. **Recommendation API** (`api`):
+   - The recommendation API can be run using `api/api.py`, providing endpoints to get movie recommendations.
+
+4. **User Interface** (`streamlit_job`):
+   - Run `streamlit_job/dashboard.py` to launch an interactive user interface based on Streamlit.
+
+### Important Notes
+
+- Make sure to have the necessary dependencies installed for each project part using `requirements.txt` or `*_requirements.txt` files.
+- The entire project is set up to be run within Docker containers. Make sure to have Docker installed on your system.
+- Customize and adjust paths and configurations as per your project's requirements.
+
 
 ## Model 
 
