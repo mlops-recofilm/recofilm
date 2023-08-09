@@ -6,10 +6,11 @@ import pandas as pd
 from pydantic import BaseModel
 from typing import List, Optional, Annotated
 from scipy.sparse import csr_matrix
+from utils.path import data_folder
 
 
 
-DATA_PATH = '../docker_volume/data/data_api.csv'
+DATA_PATH = os.path.join(data_folder,'data_api.csv')
 MIN_N_RATINGS_NEW_USER = 3
 
 security = HTTPBasic()
