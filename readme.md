@@ -184,7 +184,7 @@ To evaluate the model's recommendations, you can use the `evaluate` method. Prov
 Unit tests are based on pytest files and run at every push which made modification on the relevant files by github action.
 The tests can also be run by launching pytest in the "test_unitaires" directory.
 
-For the models, we check their stability (Assess the stability of the recommendations for a given user) and conduct a prediction comparaison (Compare user recommendations for multiple users id or movie id).
+For the models, we check their stability (Assess the stability of the recommendations for a given user) and conduct a prediction comparaison (Compare user or movie recommendations for multiple users id or movie id).
 
 For the API, every endpoint is tested and the API's response time.
 
