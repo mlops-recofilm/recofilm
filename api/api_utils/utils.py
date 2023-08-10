@@ -32,8 +32,7 @@ def get_data(data_path=DATA_PATH):
     df = data[['movieId', 'rating', 'userId']].drop_duplicates()
     rating_matrix = df.pivot(index='movieId', columns='userId', values='rating').fillna(0)
     movie_data = csr_matrix(rating_matrix.values)
-    rating_matrix = df.pivot(index='userId', columns='movieId', values='rating').fillna(0)
-    user_data = csr_matrix(rating_matrix.values)
+    user_data = df.pivot(index='userId', columns='movieId', values='rating').fillna(0)
     title_dict = pd.Series(data.movieId.values, index=data.title).to_dict()
     return data, movie_data, user_data, title_dict
 

@@ -102,6 +102,19 @@ if authentication_status:
                     url=f"{baseurl}movie_model?user_id={userid}&movie_name={movie}")
             reco_movie = res.json()["movie"]
             reco_ids = res.json()["ids"]
+        elif type_model == 'User model':
+            if genres:
+                res = requests.get(
+                    url=f"{baseurl}user_model?user_id={userid}&subject={'&subject='.join(genres)}")
+            else:
+                res = requests.get(
+                    url=f"{baseurl}user_model?user_id={userid}")
+            if res.json()['message'] == 'ok':
+                reco_movie = res.json()["movie"]
+                reco_ids = res.json()["ids"]
+            else:
+                st.write("We don't find a movie for you based on your choices")
+
     if reminde_me>0:
         res = requests.get(f"{baseurl}remindMe/{reminde_me}", headers=headers)
         reco_movie = res.json()["movie"]

@@ -121,38 +121,43 @@ def movie_model(query_params: dict = Depends(query_params)):
     save_reco(int(query_params['user_id']), random_movie)
     return {"movie": [k for k, v in title_dict.items() if v == random_movie], 'ids': random_movie}
 
+
 @app.get("/user_model", tags=['model'])
-def movie_model(query_params: dict = Depends(query_params)):
+def user_model(query_params: dict = Depends(query_params)):
     """
-    Generate a random movie recommendation using the movie recommendation model.
+    Generate a movie recommendation using the user recommendation model.
 
     Args:
-        query_params (dict): The query parameters containing 'user_id' and 'movie_name'.
+        query_params (dict): The query parameters containing 'user_id' and 'subject'.
 
     Returns:
-        dict: A dictionary containing a key 'movie' with the recommended movie title.
+        dict: A dictionary containing a key 'movie' with the recommended movie title and 'ids' with the movie IDs.
     """
     model = load(os.path.join(model_folder, 'user_model.joblib'))
-    distances, indices = model.kneighbors(user_data[user_data.index == int(query_params['user_id'])], n_neighbors=10 + 1)
+    distances, indices = model.kneighbors(user_data[user_data.index == int(query_params['user_id'])],
+                                          n_neighbors=15 + 1)
     similar_user_list = []
     for i in range(1, len(distances[0])):
         user = user_data.index[indices[0][i]]
         similar_user_list.append(user)
     indices = indices.flatten()[1:]
     weightage_list = distances.flatten()[1:] / np.sum(distances.flatten()[1:])
-    unseen_movies = get_unseen_movies(data.iloc[indices[0]], query_params['user_id'], query_params['subject'])
-    random_movie = random.choice(unseen_movies)
+    similar_user_list.append(int(query_params['user_id']))
     mov_rtngs_sim_users = user_data.values[indices]
     movies_list = user_data.columns
     weightage_list = weightage_list[:, np.newaxis] + np.zeros(len(movies_list))
     new_rating_matrix = weightage_list * mov_rtngs_sim_users
     mean_rating_list = new_rating_matrix.sum(axis=0)
-    n = min(len(mean_rating_list), 10)
-    unseen_movies = get_unseen_movies(data.iloc[list(movies_list[np.argsort(mean_rating_list)[::-1][:n]])], query_params['user_id'], query_params['subject'])
-    random_movie = random.choice(unseen_movies)
+    n = min(len(mean_rating_list), 100)
+    movies_ids = list(movies_list[np.argsort(mean_rating_list)[::-1][:n]])
+    unseen_movies = get_unseen_movies(data[data['movieId'].isin(movies_ids)],query_params['user_id'], query_params['subject'])
+    try:
+        random_movie = random.choice(unseen_movies)
+        save_reco(int(query_params['user_id']), random_movie)
+        return {"movie": [k for k, v in title_dict.items() if v == random_movie], 'ids': random_movie, 'message': 'ok'}
+    except IndexError:
+        return {'message': 'No movie for you :('}
 
-    save_reco(int(query_params['user_id']), random_movie)
-    return {"movie": [k for k, v in title_dict.items() if v == random_movie], 'ids': random_movie}
 
 
 @app.get("/remindMe/{k}", tags=['historical'])
