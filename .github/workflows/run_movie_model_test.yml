@@ -1,10 +1,11 @@
 name: Run Tests movie model
 
 
-push:
-    paths:
-      - 'test_unitaires/kpi_movie_model/dict_prediction_comparaison.pkl'
-      - 'test_unitaires/kpi_movie_model/dict_stability.pkl'
+on :
+  push:
+      paths:
+        - 'test_unitaires/kpi_movie_model/dict_prediction_comparaison.pkl'
+        - 'test_unitaires/kpi_movie_model/dict_stability.pkl'
 
 
 jobs:
