@@ -8,7 +8,7 @@ sys.path.append(api_folder_path)
 import pytest
 import requests
 from fastapi.testclient import TestClient
-from api_recofilm import app
+from api import app
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from requests.auth import HTTPBasicAuth
 import time
