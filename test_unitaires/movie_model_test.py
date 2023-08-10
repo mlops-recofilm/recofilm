@@ -3,15 +3,15 @@ from pathlib import Path
 import pickle
 
 def get_stability_dict():
-    base_dir = Path(__file__).resolve().parent  
-    file_path = base_dir /"kpi_movie_model"/ "dict_stability.pkl"
+    base_dir = Path(__file__).resolve().parent.parent  
+    file_path = base_dir /"docker_volume" / "unittest" / "kpi_movie_model"/ "dict_stability.pkl"
 
     with open(file_path, 'rb') as f:
         return pickle.load(f)
 
 def get_pred_comparaison_dict():
-    base_dir = Path(__file__).resolve().parent 
-    file_path = base_dir /"kpi_movie_model"/ "dict_prediction_comparaison.pkl"
+    base_dir = Path(__file__).resolve().parent.parent 
+    file_path = base_dir /"docker_volume" / "unittest" / "kpi_movie_model"/ "dict_prediction_comparaison.pkl"
 
     with open(file_path, 'rb') as f:
         return pickle.load(f)
