@@ -119,6 +119,7 @@ docker-compose up -d
 ├── test_unitaires
 │   ├── movie_model_test.py
 │   └── user_model_test.py
+│   └── test_api.py
 └── utils
     ├── __init__.py
     ├── path.py
@@ -136,6 +137,7 @@ docker-compose up -d
 - `preprocessing_job`: Performs preprocessing on raw data before model training.
 - `streamlit_job`: Creates a Streamlit-based user interface for interaction with recommendations.
 - `utils`: Contains shared utilities used throughout the project.
+- `test_unitaires`: test the correct working of api, models and database by github action
 
 ### Docker Configuration
 
@@ -178,6 +180,16 @@ Collaborative filtering is based on the assumption that people who agreed in the
 To evaluate the model's recommendations, you can use the `evaluate` method. Provide the movie title, the number of recommendations to generate, and a dictionary mapping movie titles to their corresponding movie IDs. The method will calculate the average rating of recommended movies and return a list of recommended movie titles.
 
 ## Unittest and Github Action
+
+Unit tests are based on pytest files and run at every push which made modification on the relevant files by github action.
+The tests can also be run by launching pytest in the "test_unitaires" directory.
+
+For the models, we check their stability (Assess the stability of the recommendations for a given user) and conduct a prediction comparaison (Compare user recommendations for multiple users id or movie id).
+
+For the API, every endpoint is tested and the API's response time.
+
+For the database, we ensure that it responds properly, is not empty, contains the correct number of columns, and that the data is in the right format.
+
 
 ## API Usage
 
