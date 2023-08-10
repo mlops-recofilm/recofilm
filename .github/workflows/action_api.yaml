@@ -18,7 +18,7 @@ jobs:
     - name: Run API
       run: |
         cd api
-        python api_recofilm.py &
+        python api.py &
         sleep 60 # wait for the API to start
     - name: Run tests with pytest
       run:
