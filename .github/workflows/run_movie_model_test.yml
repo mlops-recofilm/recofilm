@@ -1,11 +1,10 @@
-name: Run Tests
+name: Run Tests movie model
 
 
 push:
     paths:
       - 'test_unitaires/kpi_movie_model/dict_prediction_comparaison.pkl'
-      - 'test_unitaires/kpi_movie_model/dict_stability.pkl' # Note : Assurez-vous que le chemin est correct (test_unitaires ou test_unitaire ?)
-
+      - 'test_unitaires/kpi_movie_model/dict_stability.pkl'
 
 
 jobs:
