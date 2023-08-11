@@ -52,11 +52,15 @@ def test_shape_data_api_csv():
     df_api = get_data_api_csv()
     assert df_api.empty == False
 
-
 def test_nan_final_csv():
     """ check the Nan of the Dataframe final_*.csv"""
     df_data_final = get_data_final_csv()
     assert df_data_final.isna().sum().all() == False
+
+def test_nan_data_api_csv():
+    """ check the Nan of the Dataframe data_api.csv"""
+    df_data_api = get_data_api_csv()
+    assert df_data_api.isna().sum().all() == False
 
 def test_type_final_csv():
     """check the variable type of the Dataframe final_*csv"""
