@@ -5,7 +5,7 @@ import gc
 import pickle
 import sys
 sys.path.append('..')
-#import de data_unittest_folder
+#import de data_unittest_folder que j'ai créé dans  utils/path.py
 from utils.path import data_folder, input_data_folder, data_unittest_folder
 
 
@@ -138,7 +138,6 @@ class Data:
 
         with open(os.path.join(data_unittest_folder,'test_api_data.pkl'), 'wb') as f:
             pickle.dump(df[['movieId', 'rating', 'userId', 'genres','title']].drop_duplicates().head(20),f)
-
-
-
+        
+        #fin de l'ajout
         return df
