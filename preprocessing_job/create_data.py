@@ -130,7 +130,7 @@ class Data:
         df[['movieId', 'rating', 'userId', 'genres','title']].drop_duplicates().to_csv(os.path.join(data_folder,f'data_api.csv'), index = False)
 
 
-        #ajout pour créer et enregistrer les échantillons de data nécessaires pour les tests unitaires de la bases de données et les github actions 
+        #ajout pour créer et enregistrer les échantillons (20 lignes) de data nécessaires pour les tests unitaires de la bases de données et les github actions 
         #les data sont enregistrés au format pkl dans le dossier /docker_volume/unittest/test_data
 
         with open(os.path.join(data_unittest_folder,'test_data_final.pkl'), 'wb') as f:
