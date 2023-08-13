@@ -12,6 +12,10 @@ credentials:
       email: rbriggs@gmail.com
       name: Rebecca Briggs
       password: $2b$12$f0xSNixz.H92AOfijbuuCe/kWm7sdUQjhI/grrpjumXscoEJ/60Dm
+    test:
+      email: test@test.com
+      name: test
+      password: $2b$12$D3b71Hm8GOZrS0GNLk2D.e.7S2OzM9Kn/Un.SKrUSI4cvolaFqj8i
 preauthorized:
   emails:
   - melsby@gmail.com
