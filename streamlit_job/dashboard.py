@@ -1,33 +1,29 @@
-import os
-import json
 import base64
-import time
+import json
+import os
 
 import pandas as pd
 import requests
 import streamlit as st
 import streamlit_authenticator as stauth
-from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode, JsCode
-import logging
 import yaml
+from st_aggrid import GridOptionsBuilder, AgGrid, JsCode
 from yaml.loader import SafeLoader
-import sys
-sys.path.append('..')
+
 from utils.path import output_folder
 
-#baseurl = os.environ['api_address']
-baseurl = 'http://localhost:8000/'
+baseurl = os.environ['api_address']
+
 st.set_page_config(layout="wide", page_title="Movie recommender")
 
-
-with open('config.yaml') as file:
+with open(os.path.join(output_folder, 'config.yaml')) as file:
     config = yaml.load(file, Loader=SafeLoader)
 
 res = requests.get(url=f"{baseurl}unique_genres")
-genres_list =res.json()["genres"]
+genres_list = res.json()["genres"]
 
 res = requests.get(url=f"{baseurl}unique_movies")
-movies_list =res.json()["movies"]
+movies_list = res.json()["movies"]
 
 authenticator = stauth.Authenticate(
     config['credentials'],
@@ -43,17 +39,6 @@ with open(os.path.join(output_folder, "mapping_username_user_id.json"), "r") as 
     mapping_userid = json.loads(f.read())
 
 if authentication_status:
-    userid = mapping_userid[username]
-    password = ""  # Laissez le mot de passe vide
-
-    # Encodez le nom d'utilisateur et le mot de passe en Base64
-    credentials = f"{userid}:{password}"
-    base64_credentials = base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
-
-    headers = {
-        "accept": "application/json",
-        "Authorization": f"Basic {base64_credentials}"
-    }
     authenticator.logout('Logout', 'main')
 
     st.title(f"Welcome *{name}* to your Personalized Movie Recommendations!")
@@ -73,123 +58,168 @@ if authentication_status:
     st.write(
         "**Let's Get Started:** Dive in by selecting a model, picking your preferred genres, and exploring the world of movies that await you. Don't hesitate to click the 'Random movie' button or choose a specific movie to see what we have in store for you.")
     st.write("Lights, camera, action! 🍿🎬")
-    with st.sidebar:
-        reminde_me = st.slider('Reminde me my last predictions', 0, 20, 0)
-        type_model = st.radio(
-            "Choose your model",
-            ('User model', 'Movie model'))
-        genres = st.multiselect(
-            'Choose your genre',
-        genres_list)
-        if st.button('Random movie'):
-            if genres:
-                res = requests.get(
-                    url=f"{baseurl}random?user_id={userid}&subject={'&subject='.join(genres)}")
-            else:
-                res = requests.get(
-                    url=f"{baseurl}random?user_id={userid}")
+    if username not in mapping_userid:
+        block_refresh = False
+        res = requests.post(url=f"{baseurl}createUser")
+        userid = int(res.json()['id'])
+        mapping_userid[username] = str(userid)
+        password = ""  # Laissez le mot de passe vide
+
+        # Encodez le nom d'utilisateur et le mot de passe en Base64
+        credentials = f"{userid}:{password}"
+        base64_credentials = base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
+
+        headers = {
+            "accept": "application/json",
+            "Authorization": f"Basic {base64_credentials}"
+        }
+        st.write('As a new user, please fill the form below')
+        genres = st.multiselect('Choose your three favorites genres', genres_list, max_selections=3)
+        movies_list_to_choose = []
+        ids_list_to_choose = []
+        for g in genres:
+            res = requests.get(
+                url=f"{baseurl}bestMoviesByGenre?genre={g}", headers=headers)
+            movies_list_to_choose.extend(res.json()['movies'])
+            ids_list_to_choose.extend(res.json()['ids'])
+        title_to_id = dict(zip(movies_list_to_choose, ids_list_to_choose))
+        movies_selected = st.multiselect('Choose your favorites movies', movies_list_to_choose)
+        sublist_ids = [title_to_id[title] for title in movies_selected]
+        if st.button('Validate my choice'):
+            post_data = {"movieid": sublist_ids, "rating": [5] * len(sublist_ids)}
+            res = requests.post(url=f"{baseurl}addRating", json=post_data, headers=headers)
+            block_refresh = True
+
+            if block_refresh:
+                with open(os.path.join(output_folder, "mapping_username_user_id.json"), "w") as outfile:
+                    json.dump(mapping_userid, outfile)
+                st.experimental_rerun()
+
+
+    else:
+        msg = None
+        userid = mapping_userid[username]
+        password = ""  # Laissez le mot de passe vide
+
+        # Encodez le nom d'utilisateur et le mot de passe en Base64
+        credentials = f"{userid}:{password}"
+        base64_credentials = base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
+
+        headers = {
+            "accept": "application/json",
+            "Authorization": f"Basic {base64_credentials}"
+        }
+        with st.sidebar:
+            reminde_me = st.slider('Reminde me my last predictions', 0, 20, 0)
+            type_model = st.selectbox(
+                "Choose your model",
+                ('Movie model', 'User model', 'Random movie'))
+            genres = st.multiselect('Choose your genre', genres_list)
+            if st.button('Validate my choices'):
+                if type_model == 'Movie model':
+                    movie = st.selectbox(
+                        'Choose a movie',
+                        movies_list)
+                    if genres:
+                        res = requests.get(
+                            url=f"{baseurl}movie_model?user_id={userid}&subject={'&subject='.join(genres)}&movie_name={movie}")
+                    else:
+                        res = requests.get(
+                            url=f"{baseurl}movie_model?user_id={userid}&movie_name={movie}")
+                elif type_model == 'User model':
+                    if genres:
+                        res = requests.get(
+                            url=f"{baseurl}user_model?user_id={userid}&subject={'&subject='.join(genres)}")
+                    else:
+                        res = requests.get(
+                            url=f"{baseurl}user_model?user_id={userid}")
+                else:
+                    if genres:
+                        res = requests.get(
+                            url=f"{baseurl}random?user_id={userid}&subject={'&subject='.join(genres)}")
+                    else:
+                        res = requests.get(
+                            url=f"{baseurl}random?user_id={userid}")
+                if res.json()['message'] == 'ok':
+                    reco_movie = res.json()["movie"]
+                    reco_ids = res.json()["ids"]
+                else:
+                    msg = "We don't find a movie for you based on your choices"
+
+        if reminde_me > 0:
+            res = requests.get(f"{baseurl}remindMe/{reminde_me}", headers=headers)
             reco_movie = res.json()["movie"]
             reco_ids = res.json()["ids"]
-        if type_model == 'Movie model':
-            movie = st.selectbox(
-                'Choose a movie',
-                movies_list)
-            if genres:
-                res = requests.get(
-                    url=f"{baseurl}movie_model?user_id={userid}&subject={'&subject='.join(genres)}&movie_name={movie}")
-            else:
-                res = requests.get(
-                    url=f"{baseurl}movie_model?user_id={userid}&movie_name={movie}")
-            reco_movie = res.json()["movie"]
-            reco_ids = res.json()["ids"]
-        elif type_model == 'User model':
-            if genres:
-                res = requests.get(
-                    url=f"{baseurl}user_model?user_id={userid}&subject={'&subject='.join(genres)}")
-            else:
-                res = requests.get(
-                    url=f"{baseurl}user_model?user_id={userid}")
-            if res.json()['message'] == 'ok':
-                reco_movie = res.json()["movie"]
-                reco_ids = res.json()["ids"]
-            else:
-                st.write("We don't find a movie for you based on your choices")
-
-    if reminde_me>0:
-        res = requests.get(f"{baseurl}remindMe/{reminde_me}", headers=headers)
-        reco_movie = res.json()["movie"]
-        reco_ids = res.json()["ids"]
-    try:
-        reco_movie = res.json()["movie"]
-        reco_ids = res.json()["ids"]
-    except:
-        pass
-
-    def data_upload():
         try:
-            df = pd.DataFrame({'movie': reco_movie,'ids':reco_ids, 'rating': ["-"]*len(reco_movie)})
+            reco_movie = res.json()["movie"]
+            reco_ids = res.json()["ids"]
         except:
-            df = pd.DataFrame({'movie': [''],'ids':[''],  'rating': None})
-        return df
-
-    def show_grid():
-        js_code = JsCode("""
-            class UrlCellRenderer {
-              init(params) {
-                this.eGui = document.createElement('a');
-                this.eGui.innerText = params.value.split('/').pop();
-                this.eGui.setAttribute('href', params.value);
-                this.eGui.setAttribute('style', "text-decoration:none");
-                this.eGui.setAttribute('target', "_blank");
-              }
-              getGui() {
-                return this.eGui;
-              }
-            }
-        """)
-
-        df = data_upload()
-        gb = GridOptionsBuilder.from_dataframe(df)
-        gb.configure_pagination(paginationAutoPageSize=True)  # Add pagination
-        gb.configure_side_bar()  # Add a sidebar
-        gb.configure_default_column(editable=False, groupable=True)
-        gb.configure_column(
-            "rating",
-            editable=True,
-            cellEditor="agSelectCellEditor",
-            cellEditorParams={"values": ["0","1", "2", "3", "4", "5"]},
-        )
-        gb.configure_grid_options(autoSizeColumn=True, autoHeight=True)
-        gb.configure_column("ids", hide=True)
-
-        gridOptions = gb.build()
-
-        grid_response = AgGrid(
-            df,
-            gridOptions=gridOptions,
-            height=500,
-            fit_columns_on_grid_load=False,
-            columns_auto_size_mode="FIT_CONTENTS",
-            allow_unsafe_jscode=True,
-            sideBar=True
-        )
-        return grid_response
+            pass
 
 
-    def update(grid_table):
-        data = grid_table["data"]
-        movies_id = grid_table["data"].loc[grid_table["data"]["rating"] != "-"].to_dict(orient="list")
-        for movie, ids, rating in zip(movies_id["movie"], movies_id["ids"], movies_id["rating"]):
-            st.write(rating)
-            st.write(ids)
-            time.sleep(3)
-            res = requests.post(
-                url=f"{baseurl}addRating?movieid={ids}&rating={rating}",
-                headers=headers)
+        def data_upload():
+            try:
+                df = pd.DataFrame({'movie': reco_movie, 'ids': reco_ids, 'rating': ["-"] * len(reco_movie)})
+            except:
+                df = pd.DataFrame({'movie': [''], 'ids': [''], 'rating': None})
+            return df
 
 
-    grid_table = show_grid()
-    st.button("Update", on_click=update, args=[grid_table])
+        def show_grid():
+            js_code = JsCode("""
+                class UrlCellRenderer {
+                  init(params) {
+                    this.eGui = document.createElement('a');
+                    this.eGui.innerText = params.value.split('/').pop();
+                    this.eGui.setAttribute('href', params.value);
+                    this.eGui.setAttribute('style', "text-decoration:none");
+                    this.eGui.setAttribute('target', "_blank");
+                  }
+                  getGui() {
+                    return this.eGui;
+                  }
+                }
+            """)
+
+            df = data_upload()
+            gb = GridOptionsBuilder.from_dataframe(df)
+            gb.configure_pagination(paginationAutoPageSize=True)  # Add pagination
+            gb.configure_side_bar()  # Add a sidebar
+            gb.configure_default_column(editable=False, groupable=True)
+            gb.configure_column(
+                "rating",
+                editable=True,
+                cellEditor="agSelectCellEditor",
+                cellEditorParams={"values": ["0", "1", "2", "3", "4", "5"]},
+            )
+            gb.configure_grid_options(autoSizeColumn=True, autoHeight=True)
+            gb.configure_column("ids", hide=True)
+
+            gridOptions = gb.build()
+
+            grid_response = AgGrid(
+                df,
+                gridOptions=gridOptions,
+                height=500,
+                fit_columns_on_grid_load=False,
+                columns_auto_size_mode="FIT_CONTENTS",
+                allow_unsafe_jscode=True,
+                sideBar=True
+            )
+            return grid_response
+
+
+        def update(grid_table):
+            movies_id = grid_table["data"].loc[grid_table["data"]["rating"] != "-"].to_dict(orient="list")
+            post_data = {"movieid": movies_id["ids"], "rating": movies_id["rating"]}
+            res = requests.post(url=f"{baseurl}addRating", json=post_data, headers=headers)
+
+
+        if msg:
+            st.write(msg)
+        else:
+            grid_table = show_grid()
+            st.button("Update", on_click=update, args=[grid_table])
 
 
 elif authentication_status == False:
@@ -200,7 +230,7 @@ elif authentication_status == False:
         except Exception as e:
             st.error(e)
 
-        with open("config.yaml", "w") as file:
+        with open(os.path.join(output_folder, 'config.yaml'), "w") as file:
             yaml.dump(config, file, default_flow_style=False)
     st.error('Username/password is incorrect')
 elif authentication_status == None:
@@ -211,7 +241,6 @@ elif authentication_status == None:
         except Exception as e:
             st.error(e)
 
-        with open("config.yaml", "w") as file:
+        with open(os.path.join(output_folder, 'config.yaml'), "w") as file:
             yaml.dump(config, file, default_flow_style=False)
     st.warning('Please enter your username and password')
-
