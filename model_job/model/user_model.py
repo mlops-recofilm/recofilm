@@ -1,11 +1,11 @@
-import pandas as pd
-import numpy as np
 import os
+import pickle
+
+import numpy as np
+import pandas as pd
+from joblib import dump, load
 from scipy.sparse import csr_matrix
 from sklearn.neighbors import NearestNeighbors
-from joblib import dump, load
-from pathlib import Path
-import pickle
 
 from utils.path import model_folder, user_model_unittest_folder
 
@@ -48,6 +48,7 @@ class UserModel:
     print(recommendations)
     ```
     """
+
     @staticmethod
     def prepare_data(df: pd.DataFrame):
         """
@@ -78,16 +79,16 @@ class UserModel:
         rating_matrix = self.prepare_data(df)
         model = NearestNeighbors(metric='cosine', algorithm='brute', n_neighbors=n_neighbors)
         model.fit(rating_matrix)
-        dump(model, os.path.join(model_folder,'user_model.joblib'))
+        dump(model, os.path.join(model_folder, 'user_model.joblib'))
 
-    def get_similar_users(self,df, user, num_recommendations=5):
+    def get_similar_users(self, df, user, num_recommendations=5):
         model = load(os.path.join(model_folder, 'user_model.joblib'))
-        distances, indices = model.kneighbors(df[df.index == user], n_neighbors=num_recommendations+1)
+        distances, indices = model.kneighbors(df[df.index == user], n_neighbors=num_recommendations + 1)
         users = []
         for i in range(1, len(distances[0])):
             user = df.index[indices[0][i]]
             users.append(user)
-        return users, indices.flatten()[1:] , distances.flatten()[1:]/np.sum(distances.flatten()[1:])
+        return users, indices.flatten()[1:], distances.flatten()[1:] / np.sum(distances.flatten()[1:])
 
     def predict(self, df: pd.DataFrame, user_id: int, num_recommendations: int):
         """
@@ -106,7 +107,7 @@ class UserModel:
             index='userId',
             columns='movieId',
             values='rating').fillna(0)
-        similar_user_list,indices, weightage_list = self.get_similar_users(df, user_id, num_recommendations)
+        similar_user_list, indices, weightage_list = self.get_similar_users(df, user_id, num_recommendations)
         mov_rtngs_sim_users = df.values[indices]
         movies_list = df.columns
         weightage_list = weightage_list[:, np.newaxis] + np.zeros(len(movies_list))
@@ -115,7 +116,7 @@ class UserModel:
         n = min(len(mean_rating_list), num_recommendations)
         return list(movies_list[np.argsort(mean_rating_list)[::-1][:n]]), similar_user_list
 
-    def evaluate(self,df: pd.DataFrame, user_id: int, num_recommendations: int):
+    def evaluate(self, df: pd.DataFrame, user_id: int, num_recommendations: int):
         """
         Evaluate the model's recommendations by calculating the average rating of recommended movies.
 
@@ -127,15 +128,16 @@ class UserModel:
         Returns:
             Tuple[float, List[str]]: A tuple containing the average rating of recommended movies and a list of recommended movie titles.
         """
-        movies_recommendations, similar_users = self.predict(df,user_id,num_recommendations)
-        sub_df = df[(df['userId'].isin(similar_users)) & (df['movieId'].isin(movies_recommendations))][['movieId', 'rating', 'userId','title']].drop_duplicates()
+        movies_recommendations, similar_users = self.predict(df, user_id, num_recommendations)
+        sub_df = df[(df['userId'].isin(similar_users)) & (df['movieId'].isin(movies_recommendations))][
+            ['movieId', 'rating', 'userId', 'title']].drop_duplicates()
         score = sub_df.groupby('title').agg({'rating': 'mean', 'userId': 'count'})
         score['rating_times_userId'] = score['rating'] * score['userId']
-        cum_sum = score['rating_times_userId'].sum()/score['userId'].sum()
+        cum_sum = score['rating_times_userId'].sum() / score['userId'].sum()
         print(cum_sum)
         return cum_sum, score.index
 
-    def stability(self,df: pd.DataFrame, user_id: int, num_recommendations: int):
+    def stability(self, df: pd.DataFrame, user_id: int, num_recommendations: int):
         """
         Assess the stability of the recommendations for a given user.
 
@@ -149,19 +151,18 @@ class UserModel:
         """
         i = 0
         recommendations = []
-        while i <100:
-            movies_recommendations, similar_users = self.predict(df,user_id,num_recommendations)
+        while i < 100:
+            movies_recommendations, similar_users = self.predict(df, user_id, num_recommendations)
             recommendations.extend(similar_users)
-            i+=1
+            i += 1
         arr, count = np.unique(recommendations, return_counts=True)
-        count = count/100
-        dict_stability = {k:v for k,v in zip(arr, count)}
+        count = count / 100
+        dict_stability = {k: v for k, v in zip(arr, count)}
         print(dict_stability)
         with open(os.path.join(user_model_unittest_folder, "dict_stability.pkl"), 'wb') as f:
             pickle.dump(dict_stability, f)
-        
 
-    def prediction_comparaison(self,df: pd.DataFrame, users_id: list[int], num_recommendations: int):
+    def prediction_comparaison(self, df: pd.DataFrame, users_id: list[int], num_recommendations: int):
         """
         Compare user recommendations for multiple users id.
 
@@ -176,17 +177,12 @@ class UserModel:
         i = 0
         recommendations = []
         for u in users_id:
-            movies_recommendations, similar_users = self.predict(df,u,num_recommendations)
+            movies_recommendations, similar_users = self.predict(df, u, num_recommendations)
             recommendations.extend(similar_users)
-            i+=1
+            i += 1
         arr, count = np.unique(recommendations, return_counts=True)
-        count = count/len(users_id)
-        dict_pred_compar = {k:v for k,v in zip(arr, count)}
+        count = count / len(users_id)
+        dict_pred_compar = {k: v for k, v in zip(arr, count)}
         print(dict_pred_compar)
         with open(os.path.join(user_model_unittest_folder, "dict_prediction_comparaison.pkl"), 'wb') as f:
             pickle.dump(dict_pred_compar, f)
-
-            
-
-
-
