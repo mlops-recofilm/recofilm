@@ -49,10 +49,20 @@ def get_user_credentials(
     Returns:
         str: The validated user ID.
     """
-    data, movie_data, user_data, title_dict = get_data()
+    data, _, _, _ = get_data()
+    next_new_userid_filepath = os.path.join(output_folder, "next_new_userid")
     # check that credentials.username exists in DB
-    existing_users = data['userId'].unique()
-    if not (int(credentials.username) in existing_users):
+    existing_users = list(data['userId'].astype(str).unique())
+    if os.path.exists(next_new_userid_filepath):
+        mode = "r+"
+        with open(next_new_userid_filepath, mode) as next_new_userid_file:  # "r+"
+            next_new_userid = next_new_userid_file.read()
+            next_new_userid = int(next_new_userid)
+            if next_new_userid>data['userId'].max():
+                other_user = [str(x) for x in range(data['userId'].max(), next_new_userid + 1)]
+                existing_users.extend(other_user)
+
+    if not (credentials.username in existing_users):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username", #  or password
@@ -110,7 +120,8 @@ def get_unseen_movies(df, user_id, genres):
         List[int]: A list of movie IDs that are unseen by the user.
     """
     if genres:
-        df = df.loc[(df['genres'].str.contains('|'.join(genres)))]
+        for g in genres:
+            df = df.loc[(df['genres'].str.contains(g))]
     user_movies = df[df['userId'] == int(user_id)]['movieId'].unique()
     all_movies = df['movieId'].unique()
     unseen_movies = set(all_movies) - set(user_movies)
@@ -139,19 +150,23 @@ def add_ratings(userid: str, movieids: List[str], ratings: List[float], file_pat
     Returns:
         bool: True if the ratings were added successfully, False otherwise.
     """
-    if not isinstance(movieids, list): movieids = [movieids]
-    if not isinstance(ratings, list): ratings = [ratings]
 
     timestamp = int(datetime.now().timestamp())
-    filename = file_path + f'ratings_{timestamp}.csv'
+    filename = os.path.join(file_path, 'ratings_updated.csv')
+    if os.path.exists(filename):
+        ratings_df = pd.read_csv(filename)
+    else:
+        ratings_df = pd.read_csv(os.path.join(file_path, 'ratings.csv'))
 
-    new_ratings_df = pd.DataFrame({
-        "userId": userid,
+    new_ratings_data = {
+        "userId": [userid] * len(movieids),
         "movieId": movieids,
         "rating": ratings,
-        "timestamp": timestamp
-    })
-    new_ratings_df.to_csv(filename, index=False)
+        "timestamp": [timestamp] * len(movieids)
+    }
+    new_ratings_df = pd.DataFrame(new_ratings_data)
+    ratings_df = pd.concat([ratings_df, new_ratings_df], ignore_index=True)
+    ratings_df.to_csv(filename, index=False)
     return True
 
 

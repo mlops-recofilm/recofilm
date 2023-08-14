@@ -2,3 +2,4 @@ pandas
 fastapi
 scikit-learn
 uvicorn[standard]
+python-multipart
