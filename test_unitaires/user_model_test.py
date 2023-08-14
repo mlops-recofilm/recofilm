@@ -1,17 +1,17 @@
 import pytest
 from pathlib import Path
 import pickle
+import os
+from utils.path import user_model_unittest_folder
 
 def get_stability_dict():
-    base_dir = Path(__file__).resolve().parent  
-    file_path = base_dir /"kpi_user_model"/ "dict_stability.pkl"
+    file_path = os.path.join(user_model_unittest_folder, "dict_stability.pkl")
 
     with open(file_path, 'rb') as f:
         return pickle.load(f)
 
 def get_pred_comparaison_dict():
-    base_dir = Path(__file__).resolve().parent 
-    file_path = base_dir /"kpi_user_model"/ "dict_prediction_comparaison.pkl"
+    file_path = os.path.join(user_model_unittest_folder, "dict_prediction_comparaison.pkl")
 
     with open(file_path, 'rb') as f:
         return pickle.load(f)
