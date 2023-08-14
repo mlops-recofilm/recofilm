@@ -3,7 +3,6 @@ WORKDIR /code
 ADD streamlit_requierements.txt /code/streamlit_job/streamlit_requierements.txt
 RUN pip install -r /code/streamlit_job/streamlit_requierements.txt
 ADD __init__.py /code/streamlit_job/__init__.py
-ADD config.yaml /code/streamlit_job/config.yaml
 ADD dashboard.py /code/streamlit_job/dashboard.py
 WORKDIR /code/streamlit_job
 EXPOSE 8501

@@ -65,7 +65,11 @@ class Data:
             pandas.DataFrame: The created data.
         """
         mov_df = pd.read_csv(os.path.join(input_data_folder, 'movies.csv'))
-        rat_df = pd.read_csv(os.path.join(input_data_folder, 'ratings.csv'))
+        filename = os.path.join(input_data_folder, 'ratings_updated.csv')
+        if os.path.exists(filename):
+            rat_df = pd.read_csv(filename)
+        else:
+            rat_df = pd.read_csv(os.path.join(input_data_folder, 'ratings.csv'))
         gen_tag_df = pd.read_csv(os.path.join(input_data_folder, 'genome-tags.csv'))
         gen_sco_df = pd.read_csv(os.path.join(input_data_folder, 'genome-scores.csv'))
         tag_df = pd.read_csv(os.path.join(input_data_folder, 'tags.csv'))

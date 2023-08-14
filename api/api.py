@@ -5,8 +5,6 @@ import os
 import numpy as np
 import random
 from joblib import load
-import sys
-sys.path.append('..')
 from utils.path import model_folder, output_folder
 from api_utils.utils import *
 
@@ -96,10 +94,13 @@ def random_output(query_params: dict = Depends(query_params)):
         dict: A dictionary containing a key 'movie' with the recommended movie title.
     """
     unseen_movies = get_unseen_movies(data, query_params['user_id'], query_params['subject'])
-    random_movie = random.choice(unseen_movies)
-    print(random_movie)
-    save_reco(int(query_params['user_id']), random_movie)
-    return {"movie": [k for k, v in title_dict.items() if v == random_movie], 'ids': random_movie}
+    try:
+        random_movie = random.choice(unseen_movies)
+        print(random_movie)
+        save_reco(int(query_params['user_id']), random_movie)
+        return {"movie": [k for k, v in title_dict.items() if v == random_movie], 'ids': random_movie, 'message': 'ok'}
+    except IndexError:
+        return {'message': 'No movie for you :('}
 
 
 @app.get("/movie_model", tags=['model'])
@@ -115,11 +116,14 @@ def movie_model(query_params: dict = Depends(query_params)):
     """
     model = load(os.path.join(model_folder, 'movie_model.joblib'))
     movie_id = title_dict[query_params['movie_name']]
-    distances, indices = model.kneighbors(movie_data[movie_id], n_neighbors=10)
-    unseen_movies = get_unseen_movies(data.iloc[indices[0]], query_params['user_id'], query_params['subject'])
-    random_movie = random.choice(unseen_movies)
-    save_reco(int(query_params['user_id']), random_movie)
-    return {"movie": [k for k, v in title_dict.items() if v == random_movie], 'ids': random_movie}
+    distances, indices = model.kneighbors(movie_data[movie_id], n_neighbors=50)
+    unseen_movies = get_unseen_movies(data[data['movieId'].isin(indices[0])], query_params['user_id'], query_params['subject'])
+    try:
+        random_movie = random.choice(unseen_movies)
+        save_reco(int(query_params['user_id']), random_movie)
+        return {"movie": [k for k, v in title_dict.items() if v == random_movie], 'ids': random_movie, 'message': 'ok'}
+    except IndexError:
+        return {'message': 'No movie for you :('}
 
 
 @app.get("/user_model", tags=['model'])
@@ -159,7 +163,6 @@ def user_model(query_params: dict = Depends(query_params)):
         return {'message': 'No movie for you :('}
 
 
-
 @app.get("/remindMe/{k}", tags=['historical'])
 def remind_reco(k: int, userid: Annotated[str, Depends(get_user_credentials)]) -> dict[str, list[str]]:
     """
@@ -186,13 +189,13 @@ def remind_reco(k: int, userid: Annotated[str, Depends(get_user_credentials)]) -
 
 
 @app.post("/addRating", tags=['add data'])
-def add_rating(movieid: str, rating: float, userid: Annotated[str, Depends(get_user_credentials)]) -> bool:
+def add_rating(movieid: list, rating: list, userid: Annotated[str, Depends(get_user_credentials)]) -> bool:
     """
     Add a movie rating for a user.
 
     Args:
-        movieid (str): The movie ID.
-        rating (float): The movie rating.
+        movieid (list): The list of movie IDs.
+        rating (list): The list of movie ratings.
         userid (str): The user ID.
 
     Returns:
@@ -203,67 +206,55 @@ def add_rating(movieid: str, rating: float, userid: Annotated[str, Depends(get_u
 
 
 @app.get("/bestMoviesByGenre", tags=['add data'])
-def get_best_movies_by_genre(genre: GenreEnum, userid: Annotated[str, Depends(get_user_credentials)]) -> List[str]:
+def get_best_movies_by_genre(genre: GenreEnum):
     """
     Get the best movies of a specific genre for a user.
 
     Args:
         genre (GenreEnum): The movie genre.
-        userid (str): The user ID.
-
     Returns:
-        List[str]: A list of best movie titles of the specified genre.
+        Dict[List, List]: A dictionary containing a list of top movies and a list of their associated ids.
     """
     top_movies_by_genre = data[data['genres'].str.contains(genre.value)]\
-                               .sort_values('rating', ascending=False)\
-                                .head(10)[['movieId','title']]
+                           .groupby('movieId')['rating'].mean()\
+                           .reset_index()\
+                           .sort_values('rating', ascending=False)\
+                           .drop_duplicates(subset='movieId')\
+                           .head(10)
+
+    top_movies_by_genre = top_movies_by_genre.merge(data[['movieId', 'title']], on='movieId')[['movieId', 'title', 'rating']]
+    top_movies_by_genre.drop_duplicates(inplace = True)
     top_movies_by_genre_dict = top_movies_by_genre.to_dict('split')['data']
-    top_movies_by_genre_list = [f'{i[1]} (id = {i[0]})' for i in top_movies_by_genre_dict]
-    print(top_movies_by_genre_list)
-    return top_movies_by_genre_list
+    top_id, top_movies_by_genre_list = zip(*[(i[0], i[1]) for i in top_movies_by_genre_dict])
+    return {'movies': list(top_movies_by_genre_list), 'ids': list(top_id)}
 
 
 @app.post("/createUser", tags=['add data'])
-def create_user(new_ratings: RatingsItem) -> int:
+def create_user():
     """
-    Create a new user and add movie ratings for the user.
-
-    Args:
-        new_ratings (RatingsItem): The new movie ratings provided for the user.
+    Create a new user.
 
     Returns:
-        int: The freshly created user ID.
+        dict: A dictionary containing the newly created user's ID.
     """
-    data = get_data()
+    data, _, _, _ = get_data()
 
-    # new_userId = int(data.userId.max()) + 1
-    #TODO how to manage possible multiple edits of the file ? lock it ?
+    next_new_userid_filepath = os.path.join(output_folder,"next_new_userid")
 
-    # check that there are at least MIN_N_RATINGS_NEW_USER movie ratings provided
-    if len(set(new_ratings.movieid)) != len(set(new_ratings.rating)) \
-        or len(set(new_ratings.movieid)) < MIN_N_RATINGS_NEW_USER \
-            or len(set(new_ratings.movieid)) != len(new_ratings.movieid):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="At least 3 unique movies (ids) should be provided with their corresponding ratings",
-        )
-    
-    for movieid in new_ratings.movieid:
-        if movieid not in data.movieId.unique():
-            raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Movie with id {movieid} doesn't exist, please enter an existing movie",
-        )
+    # create file if doesn't exist
+    if os.path.exists(next_new_userid_filepath):
+        mode = "r+"
+    else:
+        mode = "x+"
 
-    with open(os.path.join(output_folder,"next_new_userid"), "r+") as next_new_userid_file:
+    with open(next_new_userid_filepath, mode) as next_new_userid_file:  # "r+"
         next_new_userid = next_new_userid_file.read()
-        next_new_userid = int(next_new_userid)
-        if next_new_userid == -1:
-            next_new_userid = data.userId.max() + 1
-        add_ratings(userid=next_new_userid, movieids=new_ratings.movieid, ratings=new_ratings.rating)
+        if next_new_userid:
+            next_new_userid = int(next_new_userid)
+        else:
+            next_new_userid = data['userId'].max() + 1
         next_new_userid_file.seek(0)
         next_new_userid_file.truncate(0)
         next_new_userid_file.write(str(next_new_userid + 1))
-
-    return next_new_userid
+    return {'id': str(next_new_userid)}
   
