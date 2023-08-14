@@ -2,6 +2,8 @@ import pytest
 from pathlib import Path
 import pickle
 import os
+import sys
+sys.path.append('..')
 from utils.path import user_model_unittest_folder
 
 def get_stability_dict():
