@@ -1,8 +1,11 @@
-name: Run Tests
+name: Run user Tests
 
 
-on: [push]
-
+on :
+  push:
+      paths:
+        - 'docker_volume/unittest/kpi_user_model/dict_prediction_comparaison.pkl'
+        - 'docker_volume/unittest/kpi_user_model/dict_stability.pkl'
 
 jobs:
   build:

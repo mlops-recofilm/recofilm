@@ -15,6 +15,7 @@ def get_stability_dict():
 def get_pred_comparaison_dict():
     file_path = os.path.join(movie_model_unittest_folder, "dict_prediction_comparaison.pkl")
 
+
     with open(file_path, 'rb') as f:
         return pickle.load(f)
 
