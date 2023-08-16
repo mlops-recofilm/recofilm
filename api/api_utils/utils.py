@@ -17,6 +17,16 @@ MIN_N_RATINGS_NEW_USER = 3
 security = HTTPBasic()
 
 
+def load_ratings():
+    filename = os.path.join(input_data_folder, 'ratings_updated.csv')
+    if os.path.exists(filename):
+        ratings_df = pd.read_csv(filename)
+    else:
+        ratings_df = pd.read_csv(os.path.join(input_data_folder, 'ratings.csv'))
+    return ratings_df, filename
+
+ratings_df, filename = load_ratings()
+
 def get_data(data_path=DATA_PATH):
     """
     Load and prepare the movie ratings data.
@@ -137,7 +147,7 @@ class RatingsItem(BaseModel):
     rating: List[float] = [5]
 
 
-def add_ratings(userid: str, movieids: List[str], ratings: List[float], file_path = input_data_folder):
+def add_ratings(userid: str, movieids: List[str], ratings: List[float]):
     """
     Add new movie ratings for a user.
 
@@ -150,14 +160,8 @@ def add_ratings(userid: str, movieids: List[str], ratings: List[float], file_pat
     Returns:
         bool: True if the ratings were added successfully, False otherwise.
     """
-
+    global ratings_df
     timestamp = int(datetime.now().timestamp())
-    filename = os.path.join(file_path, 'ratings_updated.csv')
-    if os.path.exists(filename):
-        ratings_df = pd.read_csv(filename)
-    else:
-        ratings_df = pd.read_csv(os.path.join(file_path, 'ratings.csv'))
-
     new_ratings_data = {
         "userId": [userid] * len(movieids),
         "movieId": movieids,
