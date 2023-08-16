@@ -164,7 +164,7 @@ def user_model(query_params: dict = Depends(query_params)):
 
 
 @app.get("/remindMe/{k}", tags=['historical'])
-def remind_reco(k: int, userid: Annotated[str, Depends(get_user_credentials)]) -> dict[str, list[str]]:
+def remind_reco(k: int, userid: Annotated[str, Depends(get_user_credentials)]):
     """
     Get the last k unique recommended movies for a user.
 

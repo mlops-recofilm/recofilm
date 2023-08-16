@@ -35,6 +35,18 @@ authenticator = stauth.Authenticate(
 
 name, authentication_status, username = authenticator.login('Login', 'main')
 
+def build_url(baseurl, endpoint, userid, genres=None, movie=None):
+    if genres:
+        genre_query = '&subject='.join(genres)
+        return f"{baseurl}{endpoint}?user_id={userid}&subject={genre_query}&movie_name={movie}"
+    else:
+        return f"{baseurl}{endpoint}?user_id={userid}&movie_name={movie}" if movie else f"{baseurl}{endpoint}?user_id={userid}"
+
+def get_response(url):
+    res = requests.get(url)
+    return res
+
+
 with open(os.path.join(output_folder, "mapping_username_user_id.json"), "r") as f:
     mapping_userid = json.loads(f.read())
 
@@ -115,46 +127,36 @@ if authentication_status:
                 "Choose your model",
                 ('Movie model', 'User model', 'Random movie'))
             genres = st.multiselect('Choose your genre', genres_list)
+            if type_model == 'Movie model':
+                movie = st.selectbox(
+                    'Choose a movie',
+                    movies_list)
             if st.button('Validate my choices'):
                 if type_model == 'Movie model':
-                    movie = st.selectbox(
-                        'Choose a movie',
-                        movies_list)
-                    if genres:
-                        res = requests.get(
-                            url=f"{baseurl}movie_model?user_id={userid}&subject={'&subject='.join(genres)}&movie_name={movie}")
-                    else:
-                        res = requests.get(
-                            url=f"{baseurl}movie_model?user_id={userid}&movie_name={movie}")
+                    endpoint = 'movie_model'
+                    url = build_url(baseurl, endpoint, userid, genres, movie)
                 elif type_model == 'User model':
-                    if genres:
-                        res = requests.get(
-                            url=f"{baseurl}user_model?user_id={userid}&subject={'&subject='.join(genres)}")
-                    else:
-                        res = requests.get(
-                            url=f"{baseurl}user_model?user_id={userid}")
+                    endpoint = 'user_model'
+                    url = build_url(baseurl, endpoint, userid, genres)
                 else:
-                    if genres:
-                        res = requests.get(
-                            url=f"{baseurl}random?user_id={userid}&subject={'&subject='.join(genres)}")
-                    else:
-                        res = requests.get(
-                            url=f"{baseurl}random?user_id={userid}")
+                    endpoint = 'random'
+                    url = build_url(baseurl, endpoint, userid, genres)
+                res = get_response(url)
                 if res.json()['message'] == 'ok':
                     reco_movie = res.json()["movie"]
                     reco_ids = res.json()["ids"]
                 else:
                     msg = "We don't find a movie for you based on your choices"
 
-        if reminde_me > 0:
-            res = requests.get(f"{baseurl}remindMe/{reminde_me}", headers=headers)
-            reco_movie = res.json()["movie"]
-            reco_ids = res.json()["ids"]
-        try:
-            reco_movie = res.json()["movie"]
-            reco_ids = res.json()["ids"]
-        except:
-            pass
+            if reminde_me > 0:
+                res = requests.get(f"{baseurl}remindMe/{reminde_me}", headers=headers)
+                reco_movie = res.json()["movie"]
+                reco_ids = res.json()["ids"]
+            try:
+                reco_movie = res.json()["movie"]
+                reco_ids = res.json()["ids"]
+            except:
+                pass
 
 
         def data_upload():
