@@ -7,8 +7,8 @@ import requests
 import streamlit as st
 import streamlit_authenticator as stauth
 import yaml
-from st_aggrid import GridOptionsBuilder, AgGrid, JsCode
 from yaml.loader import SafeLoader
+from streamlit_utils import genres_list, movies_list, build_url, get_response, update, show_grid
 
 from utils.path import output_folder
 
@@ -18,12 +18,6 @@ st.set_page_config(layout="wide", page_title="Movie recommender")
 
 with open(os.path.join(output_folder, 'config.yaml')) as file:
     config = yaml.load(file, Loader=SafeLoader)
-
-res = requests.get(url=f"{baseurl}unique_genres")
-genres_list = res.json()["genres"]
-
-res = requests.get(url=f"{baseurl}unique_movies")
-movies_list = res.json()["movies"]
 
 authenticator = stauth.Authenticate(
     config['credentials'],
@@ -35,16 +29,33 @@ authenticator = stauth.Authenticate(
 
 name, authentication_status, username = authenticator.login('Login', 'main')
 
-def build_url(baseurl, endpoint, userid, genres=None, movie=None):
-    if genres:
-        genre_query = '&subject='.join(genres)
-        return f"{baseurl}{endpoint}?user_id={userid}&subject={genre_query}&movie_name={movie}"
-    else:
-        return f"{baseurl}{endpoint}?user_id={userid}&movie_name={movie}" if movie else f"{baseurl}{endpoint}?user_id={userid}"
 
-def get_response(url):
-    res = requests.get(url)
-    return res
+def call_remind():
+    if st.session_state.k_reminde_me > 0:
+        res = requests.get(f"{baseurl}remindMe/{st.session_state.k_reminde_me}", headers=headers)
+        st.session_state.reco_movie = res.json()["movie"]
+        st.session_state.reco_ids = res.json()["ids"]
+        st.session_state.msg = None
+
+def call_model():
+    if st.session_state.type_model == 'Movie model':
+        endpoint = 'movie_model'
+        url = build_url(baseurl, endpoint, userid, st.session_state.genre, st.session_state.movie)
+    elif st.session_state.type_model == 'User model':
+        endpoint = 'user_model'
+        url = build_url(baseurl, endpoint, userid, st.session_state.genre)
+    else:
+        endpoint = 'random'
+        url = build_url(baseurl, endpoint, userid,st.session_state.genre)
+    res = get_response(url)
+    if res.json()['message'] == 'ok':
+        st.session_state.reco_movie = res.json()["movie"]
+        st.session_state.reco_ids = res.json()["ids"]
+        st.session_state.msg = None
+    else:
+        st.session_state.msg = "We don't find a movie for you based on your choices"
+        st.session_state.reco_movie = ['']
+        st.session_state.reco_ids = ['']
 
 
 with open(os.path.join(output_folder, "mapping_username_user_id.json"), "r") as f:
@@ -121,107 +132,34 @@ if authentication_status:
             "accept": "application/json",
             "Authorization": f"Basic {base64_credentials}"
         }
+        if "k_reminde_me" not in st.session_state:
+            # set the initial default value of the slider widget
+            st.session_state.k_reminde_me = 0
+        if 'reco_movie' not in st.session_state:
+            st.session_state.reco_movie = ['']
+        if 'reco_ids' not in st.session_state:
+            st.session_state.reco_ids = ['']
+        if 'type_model' not in st.session_state:
+            st.session_state.type_model = 'Movie model'
+        if 'movie' not in st.session_state:
+            st.session_state.movie = 'Toy Story (1995)'
+        if 'genre' not in st.session_state:
+            st.session_state.genre = []
+        if 'msg' not in st.session_state:
+            st.session_state.msg = None
         with st.sidebar:
-            reminde_me = st.slider('Reminde me my last predictions', 0, 20, 0)
-            type_model = st.selectbox(
-                "Choose your model",
-                ('Movie model', 'User model', 'Random movie'))
-            genres = st.multiselect('Choose your genre', genres_list)
-            if type_model == 'Movie model':
-                movie = st.selectbox(
-                    'Choose a movie',
-                    movies_list)
-            if st.button('Validate my choices'):
-                if type_model == 'Movie model':
-                    endpoint = 'movie_model'
-                    url = build_url(baseurl, endpoint, userid, genres, movie)
-                elif type_model == 'User model':
-                    endpoint = 'user_model'
-                    url = build_url(baseurl, endpoint, userid, genres)
-                else:
-                    endpoint = 'random'
-                    url = build_url(baseurl, endpoint, userid, genres)
-                res = get_response(url)
-                if res.json()['message'] == 'ok':
-                    reco_movie = res.json()["movie"]
-                    reco_ids = res.json()["ids"]
-                else:
-                    msg = "We don't find a movie for you based on your choices"
+            reminde_me = st.slider('Reminde me my last predictions', 0, 20, 0, on_change=call_remind, key="k_reminde_me")
+            if st.session_state.k_reminde_me == 0:
+                type_model = st.selectbox("Choose your model", ('Movie model', 'User model', 'Random movie'), key="type_model", on_change=call_model)
+                genre = st.multiselect('Choose your genre', genres_list, key="genre", on_change=call_model)
+                if st.session_state.type_model == 'Movie model':
+                    movie = st.selectbox('Choose a movie', movies_list, key='movie', on_change=call_model)
 
-            if reminde_me > 0:
-                res = requests.get(f"{baseurl}remindMe/{reminde_me}", headers=headers)
-                reco_movie = res.json()["movie"]
-                reco_ids = res.json()["ids"]
-            try:
-                reco_movie = res.json()["movie"]
-                reco_ids = res.json()["ids"]
-            except:
-                pass
+        if st.session_state.msg:
+            st.write(st.session_state.msg)
 
-
-        def data_upload():
-            try:
-                df = pd.DataFrame({'movie': reco_movie, 'ids': reco_ids, 'rating': ["-"] * len(reco_movie)})
-            except:
-                df = pd.DataFrame({'movie': [''], 'ids': [''], 'rating': None})
-            return df
-
-
-        def show_grid():
-            js_code = JsCode("""
-                class UrlCellRenderer {
-                  init(params) {
-                    this.eGui = document.createElement('a');
-                    this.eGui.innerText = params.value.split('/').pop();
-                    this.eGui.setAttribute('href', params.value);
-                    this.eGui.setAttribute('style', "text-decoration:none");
-                    this.eGui.setAttribute('target', "_blank");
-                  }
-                  getGui() {
-                    return this.eGui;
-                  }
-                }
-            """)
-
-            df = data_upload()
-            gb = GridOptionsBuilder.from_dataframe(df)
-            gb.configure_pagination(paginationAutoPageSize=True)  # Add pagination
-            gb.configure_side_bar()  # Add a sidebar
-            gb.configure_default_column(editable=False, groupable=True)
-            gb.configure_column(
-                "rating",
-                editable=True,
-                cellEditor="agSelectCellEditor",
-                cellEditorParams={"values": ["0", "1", "2", "3", "4", "5"]},
-            )
-            gb.configure_grid_options(autoSizeColumn=True, autoHeight=True)
-            gb.configure_column("ids", hide=True)
-
-            gridOptions = gb.build()
-
-            grid_response = AgGrid(
-                df,
-                gridOptions=gridOptions,
-                height=500,
-                fit_columns_on_grid_load=False,
-                columns_auto_size_mode="FIT_CONTENTS",
-                allow_unsafe_jscode=True,
-                sideBar=True
-            )
-            return grid_response
-
-
-        def update(grid_table):
-            movies_id = grid_table["data"].loc[grid_table["data"]["rating"] != "-"].to_dict(orient="list")
-            post_data = {"movieid": movies_id["ids"], "rating": movies_id["rating"]}
-            res = requests.post(url=f"{baseurl}addRating", json=post_data, headers=headers)
-
-
-        if msg:
-            st.write(msg)
-        else:
-            grid_table = show_grid()
-            st.button("Update", on_click=update, args=[grid_table])
+        grid_table = show_grid(st.session_state.reco_movie, st.session_state.reco_ids)
+        st.button("Update", on_click=update, args=[grid_table, headers])
 
 
 elif authentication_status == False:
