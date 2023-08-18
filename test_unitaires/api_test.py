@@ -8,8 +8,7 @@ import pandas as pd
 import pytest
 import requests
 from fastapi.testclient import TestClient
-from api.api import app
-from api.api import *
+from api.api import unique_genres, unique_movies, random_output
 from fastapi import FastAPI, HTTPException, Response, status, Depends, Header, Query
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from requests.auth import HTTPBasicAuth
