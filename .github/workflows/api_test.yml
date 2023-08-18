@@ -29,4 +29,5 @@ jobs:
     - name: Run api_test
       run: |
         
-        cd test_unitaires && pytest -v api_test.py
+        cd test_unitaires
+        pytest -v api_test.py
