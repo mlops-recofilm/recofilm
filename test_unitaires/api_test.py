@@ -20,12 +20,65 @@ auth_string = f"Basic {encoded_credentials}"
 
 client = TestClient(app)
 
-print(encoded_credentials)
 
 
-def test_api_starting():
-    """Test if the API is running."""
-    response = client.get("/")
+@pytest.fixture
+def data_api_test():
+    '''Returns data_api_dataframe'''
+    df = pd.DataFrame([[1,3.5,1644,'Adventure|Animation|Children|Comedy|Fantasy','Toy Story (1995)']],index=['1'],columns=['movieId','rating','userId','genres','title'])
+    return df
+
+
+def test_api_unique_genre(data_api_test):
+    """check if the list of unique movies genres is not empty"""
+    response = client.get('/unique_genres')
     assert response.status_code == 200
-    assert response.json() == {"message": "API is up and running"}
+    assert response.json() != None
+
+def test_api_get_random(data_api_test):
+    """check if the api gives always a random movie with an user known"""
+    response = client.get('/random?user_id=1644')
+    assert response.status_code == 200
+    assert response.json() != {'message': 'no movie for you:('}
+
+def test_api_user_model(data_api_test):
+    """ check if the api_user_model gives always a movie advised by the model movie with an user and a movie known:
+    user_id : 1644"""
+    response = client.get('/usermodel',params={'user_id':'1644'},
+                          headers={"Authorization": "Basic MTY0NDo="})
+    assert response.status_code == 200
+    assert response.json() != {'message': 'no movie for you:('}
+
+def test_api_movie_model(data_api_test):
+    """check if the api_movie_model gives always a movie advised by the model movie with an user and a movie known:
+    user_id : 1644
+    movie : Star Wars: Episode IV - A New Hope (1977) """
+    
+    response = client.get('/movie_model',params={'user_id':'1644',
+                          'movie_name':'Star Wars: Episode IV - A New Hope (1977)'},
+                          headers={"Authorization": "Basic MTY0NDo="})
+    assert response.status_code == 200
+    assert response.json() != {'message': 'no movie for you:('}
+
+
+def test_api_user_model(data_api_test):
+    """ check if the api_user_model gives always a movie advised by the model movie with an user and a movie known:
+    user_id : 1644"""
+    response = client.get('/user_model',params={'user_id':'1644'},
+                          headers={"Authorization": "Basic MTY0NDo="})
+    assert response.status_code == 200
+    assert response.json() != {'message': 'no movie for you:('}
+
+def test_response_time(data_api_test):
+    start_time = time.time() 
+
+    response = client.get("/")  
+
+    elapsed_time = time.time() - start_time  
+    assert response.status_code == 200
+    assert elapsed_time < 1
+
+def test_create_user(data_api_test):
+    response = client.post("/createUser", json={"movieid": [1, 173, 70286], "rating": [4.0, 5.0, 3.0]})
+    assert response.status_code == 200
 
