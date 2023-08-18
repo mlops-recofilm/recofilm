@@ -7,16 +7,10 @@ sys.path.insert(0,parent_dir_path)
 import pytest
 import requests
 from fastapi.testclient import TestClient
-#from api.api import app
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from requests.auth import HTTPBasicAuth
 import time
-#from api_utils.utils import *
 
-
-#data, movie_data, user_data, title_dict = get_data()
-
-#client = TestClient(app)
 
 def test_api_starting():
     """check if the API is running."""
@@ -26,7 +20,6 @@ def test_api_starting():
     assert response.status_code == 200
     assert response.json() == {"message": "API is up and running"}
 
-#print(data)
 
 def test_api_unique_genre():
     """check if the list of unique movies genres is not empty"""
