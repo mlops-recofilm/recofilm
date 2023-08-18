@@ -1,8 +1,9 @@
 name: Run api_test
 on :
-  [push]
-        #paths:
-          #- docker_volume\data\data_api.csv
+  push:
+      paths:
+        - 'docker_volume/unittest/kpi_movie_model/dict_prediction_comparaison.pkl'
+        - 'docker_volume/unittest/kpi_movie_model/dict_stability.pkl'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -22,9 +23,6 @@ jobs:
         pip install httpx
         pip install fastapi
         pip install pytest
-        pip install joblib
-        pip install pandas
-        pip install scipy
     - name: Run api_test
       run: |
         
