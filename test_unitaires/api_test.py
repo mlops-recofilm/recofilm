@@ -20,7 +20,7 @@ credentials = '1644'
 encoded_credentials = base64.b64encode(b"1644").decode()
 auth_string = f"Basic {encoded_credentials}"
 
-client = TestClient(app)
+#client = TestClient(app)
 mock_data = pd.DataFrame([[1,3.5,1644,
                            'Adventure|Animation|Children|Comedy|Fantasy','Toy Story (1995)']],index=['1'],columns=['movieId','rating','userId','genres','title'])
 
