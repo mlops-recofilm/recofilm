@@ -49,7 +49,7 @@ def test_unique_movies():
 
 def test_random_output():
     """test if random_output gives always a random movie with an user known"""
-    response = client.get("/unique_genres",params={'user_id':'1644'})
+    response = client.get("/random",params={'user_id':'1644'})
     assert response.status_code == 200
     assert response.json() != {'message': 'no movie for you:('}
 
@@ -65,9 +65,9 @@ def test_get_user_model():
     assert response.status_code == 200
     assert response.json() != {'message': 'no movie for you:('}
 
-
 def test_api_reminder():
     """ test the security of the api_reminder """
-    response = client.get("/remindMe",params={'k':10},headers={'Authentification': "fake_id"})
+    response = client.get("/remindMe",params={'k':10},headers={"Authorization": "fake_id"})
     assert response.status_code == 404
+
 
