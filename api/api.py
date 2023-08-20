@@ -11,8 +11,8 @@ from joblib import load
 from utils.path import model_folder, output_folder
 from api_utils.utils import *
 
-
-data, movie_data, user_data, title_dict = get_data()
+if os.getenv("GITHUB_ACTION") is None:
+    data, movie_data, user_data, title_dict = get_data()
 
 
 def get_next_new_userid():
