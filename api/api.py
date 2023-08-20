@@ -13,6 +13,7 @@ from api_utils.utils import *
 
 if os.getenv("GITHUB_ACTION") is None:
     data, movie_data, user_data, title_dict = get_data()
+    GenreEnum = get_GenreEnum(data)
 
 
 def get_next_new_userid():
@@ -45,8 +46,6 @@ app = FastAPI(
     ]
 )
 app.state.NEW_USERID = -1
-
-GenreEnum = get_GenreEnum(data)
 
 
 @app.get("/", tags=['home'])
