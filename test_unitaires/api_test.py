@@ -22,22 +22,11 @@ from requests.auth import HTTPBasicAuth
 import time
 from unittest.mock import Mock, patch
 
-
-data = pd.DataFrame({
-        'movieId': [1],
-        'rating': [3.5],
-        'userId': [1644],
-        'genres': ['Adventure|Animation|Children|Comedy|Fantasy'],
-        'title': ['Toy Story (1995)']
-    })
-
 client = TestClient(app)
 
 credentials = "1644:"
 encoded_credentials = base64.b64encode(credentials.encode()).decode()
-print(encoded_credentials)
 auth_string = f"Basic {encoded_credentials}"
-print(auth_string)
 
 def test_api_starting():
     """Test if the API is running."""
