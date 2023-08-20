@@ -15,6 +15,8 @@ if os.getenv("GITHUB_ACTION") is None:
     data, movie_data, user_data, title_dict = get_data()
     GenreEnum = get_GenreEnum(data)
 else:
+    data = None
+    movie_data = None
     GenreEnum = None
 
 
