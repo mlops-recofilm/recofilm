@@ -14,6 +14,8 @@ from api_utils.utils import *
 if os.getenv("GITHUB_ACTION") is None:
     data, movie_data, user_data, title_dict = get_data()
     GenreEnum = get_GenreEnum(data)
+else:
+    GenreEnum = None
 
 
 def get_next_new_userid():
