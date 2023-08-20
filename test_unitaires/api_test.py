@@ -22,10 +22,13 @@ import time
 from unittest.mock import Mock, patch
 
 
-data = pd.DataFrame([[1, 3.5, 1644,
-                      'Adventure|Animation|Children|Comedy|Fantasy', 'Toy Story (1995)']],
-                    index=['1'],
-                    columns=['movieId', 'rating', 'userId', 'genres', 'title'])
+data = pd.DataFrame({
+        'movieId': [1],
+        'rating': [3.5],
+        'userId': [1644],
+        'genres': ['Adventure|Animation|Children|Comedy|Fantasy'],
+        'title': ['Toy Story (1995)']
+    })
 
 client = TestClient(app)
 
