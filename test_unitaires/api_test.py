@@ -49,12 +49,6 @@ print(mock_data)
 
 client = TestClient(app)
 
-credentials = "1644:"
-encoded_credentials = base64.b64encode(credentials.encode()).decode()
-auth_string = f"Basic {encoded_credentials}"
-
-print(encoded_credentials)
-print(auth_string)
 
 def test_api_starting():
     """Test if the API is running."""
