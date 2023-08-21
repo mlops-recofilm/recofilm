@@ -80,17 +80,19 @@ def test_unique_movies():
 def test_random_output():
     """test if random_output gives always a random movie with an user known"""
     with patch('api.api.data',mock_data):
-        response = client.get("/random",params={'user_id':'1644'})
-        assert response.status_code == 200
-        assert response.json() == {'ids': 2122, 'message': 'ok', 'movie': ['Children of the Corn (1984)']}
+        with patch('api.api.title_dict',mock_title_dict_data):
+            response = client.get("/random",params={'user_id':'1644'})
+            assert response.status_code == 200
+            assert response.json() == {'ids': 2122, 'message': 'ok', 'movie': ['Children of the Corn (1984)']}
 
 def test_get_movie_model():
     """test if the movie_model gives always a movie advised by the model movie with an user and a movie known"""
     with patch('api.api.data',mock_data):
-        with patch('api.api.title_dict',mock_title_dict_data):
-            response = client.get("/movie_model",params={'user_id':1644,'movie_name':'Toy Story (1995)'})
-            assert response.status_code == 200
-            assert response.json() == {'ids': 2122, 'movie': ['Children of the Corn (1984)'],'message': 'ok'}
+        with patch('api.api.movie_data',mock_movie_data):
+            with patch('api.api.title_dict',mock_title_dict_data):
+                response = client.get("/movie_model",params={'user_id':1644,'movie_name':'Toy Story (1995)'})
+                assert response.status_code == 200
+                assert response.json() == {'ids': 2122, 'movie': ['Children of the Corn (1984)'],'message': 'ok'}
 
 def test_get_user_model():
     """ test if the user_model gives always a movie advised by the model movie with an user known"""
