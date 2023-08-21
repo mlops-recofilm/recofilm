@@ -5,8 +5,11 @@ import os
 dir_path = os.path.dirname(os.path.realpath(__file__))
 parent_dir_path = os.path.abspath(os.path.join(dir_path,os.pardir))
 sys.path.insert(0,parent_dir_path)
-sys.path.append('../api')
+#sys.path.append('../api')
 #fin ajout
+
+
+
 
 from scipy.sparse import csr_matrix
 import pandas as pd
