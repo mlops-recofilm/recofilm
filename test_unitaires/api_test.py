@@ -25,7 +25,7 @@ from unittest.mock import Mock, patch
 
 def get_data_mock():
     """
-    Load and prepare the movie ratings data.
+    Load and prepare the movie ratings data for unit test.
     Returns:
         tuple: A tuple containing the movie ratings data DataFrame, movie data sparse CSR matrix,
                user data sparse CSR matrix, and a dictionary mapping movie titles to IDs.
