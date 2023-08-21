@@ -80,7 +80,6 @@ def test_random_output():
             assert response.json() == {'ids': 2122, 'message': 'ok', 'movie': ['Children of the Corn (1984)']}
             
 
-
 def test_api_reminder():
     """ test the security of the api_reminder """
     response = client.get("/remindMe",params={'k':10},headers={"Authorization": "fake"})
