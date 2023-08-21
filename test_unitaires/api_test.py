@@ -98,9 +98,10 @@ def test_get_user_model():
     """ test if the user_model gives always a movie advised by the model movie with an user known"""
     with patch('api.api.data',mock_data):
         with patch('api.api.title_dict',mock_title_dict_data):
-            response = client.get("/user_model",params={'user_id':1644,})
-            assert response.status_code == 200
-            assert response.json() == {'message': 'No movie for you :('}
+            with patch('api.api.movie_data',mock_movie_data):
+                response = client.get("/user_model",params={'user_id':1644,})
+                assert response.status_code == 200
+                assert response.json() == {'message': 'No movie for you :('}
 
 
 def test_api_reminder():
