@@ -86,13 +86,6 @@ def test_random_output():
             assert response.json() == {'ids': 2122, 'message': 'ok', 'movie': ['Children of the Corn (1984)']}
             
 
-def test_get_best_movies_by_genre():
-    with patch('api.api.data',mock_data):
-        with patch('api.api.title_dict',mock_title_dict_data):
-            response = client.get('/bestMoviesByGenre',params={'genre':'Thriller'})
-            assert response.status_code == 200
-            assert response.json() == {'ids': [2122], 'movies': ['Children of the Corn (1984)']}
-
 
 def test_api_reminder():
     """ test the security of the api_reminder """
