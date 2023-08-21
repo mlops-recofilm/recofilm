@@ -44,11 +44,7 @@ def get_data_mock():
 
 mock_data,mock_movie_data,mock_user_data,mock_title_dict_data = get_data_mock()
 
-print(mock_data)
-
-
 client = TestClient(app)
-
 
 def test_api_starting():
     """Test if the API is running."""
