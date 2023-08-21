@@ -1,13 +1,9 @@
 import sys
 import os
-
-#ajout pour lire les fichiers
-dir_path = os.path.dirname(os.path.realpath(__file__))
-parent_dir_path = os.path.abspath(os.path.join(dir_path,os.pardir))
-sys.path.insert(0,parent_dir_path)
-#sys.path.append('../api')
-#fin ajout
-
+sys.path.append('..')
+sys.path.append('../api')
+sys.path.append('../api/api_utils')
+sys.path.append('../utils')
 
 
 
@@ -20,7 +16,7 @@ from fastapi.testclient import TestClient
 import importlib
 import base64
 
-# Reload the api module to ensure the patch takes effect
+
 from api.api import app
 from requests.auth import HTTPBasicAuth
 import time
