@@ -1,3 +1,6 @@
+import sys,os
+#sys.path.append('../api')
+
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi import FastAPI, HTTPException, Response, status, Depends, Header, Query
 import json
@@ -8,8 +11,15 @@ from joblib import load
 from utils.path import model_folder, output_folder
 from api_utils.utils import *
 
-
-data, movie_data, user_data, title_dict = get_data()
+if os.getenv("GITHUB_ACTION") is None:
+    data, movie_data, user_data, title_dict = get_data()
+    GenreEnum = get_GenreEnum(data)
+else:
+    data = None
+    movie_data = None
+    user_data = None
+    title_dict = None
+    GenreEnum = None
 
 
 def get_next_new_userid():
@@ -42,8 +52,6 @@ app = FastAPI(
     ]
 )
 app.state.NEW_USERID = -1
-
-GenreEnum = get_GenreEnum(data)
 
 
 @app.get("/", tags=['home'])
