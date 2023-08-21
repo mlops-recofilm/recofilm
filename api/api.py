@@ -1,5 +1,5 @@
 import sys,os
-sys.path.append('../api')
+#sys.path.append('../api')
 
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi import FastAPI, HTTPException, Response, status, Depends, Header, Query
