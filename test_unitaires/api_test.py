@@ -1,12 +1,7 @@
 import sys
 import os
 
-#ajout pour lire les fichiers
-dir_path = os.path.dirname(os.path.realpath(__file__))
-parent_dir_path = os.path.abspath(os.path.join(dir_path,os.pardir))
-sys.path.insert(0,parent_dir_path)
-sys.path.append('../api')
-#fin ajout
+
 from scipy.sparse import csr_matrix
 import pandas as pd
 import pytest
@@ -25,10 +20,6 @@ from unittest.mock import Mock, patch
 def get_data_mock():
     """
     Load and prepare the movie ratings data.
-
-    Args:
-        data_path (str): The path to the movie ratings data CSV file.
-
     Returns:
         tuple: A tuple containing the movie ratings data DataFrame, movie data sparse CSR matrix,
                user data sparse CSR matrix, and a dictionary mapping movie titles to IDs.
@@ -49,12 +40,15 @@ mock_data,mock_movie_data,mock_user_data,mock_title_dict_data = get_data_mock()
 
 print(mock_data)
 
+
 client = TestClient(app)
 
 credentials = "1644:"
 encoded_credentials = base64.b64encode(credentials.encode()).decode()
 auth_string = f"Basic {encoded_credentials}"
 
+print(encoded_credentials)
+print(auth_string)
 
 def test_api_starting():
     """Test if the API is running."""
@@ -86,9 +80,17 @@ def test_random_output():
             assert response.json() == {'ids': 2122, 'message': 'ok', 'movie': ['Children of the Corn (1984)']}
             
 
+def test_get_best_movies_by_genre():
+    with patch('api.api.data',mock_data):
+        with patch('api.api.title_dict',mock_title_dict_data):
+            response = client.get('/bestMoviesByGenre',params={'genre':'Thriller'})
+            assert response.status_code == 200
+            assert response.json() == {'ids': [2122], 'movies': ['Children of the Corn (1984)']}
+
+
 def test_api_reminder():
     """ test the security of the api_reminder """
-    response = client.get("/remindMe",params={'k':10},headers={"Authorization": "fake_id"})
+    response = client.get("/remindMe",params={'k':10},headers={"Authorization": "fake"})
     assert response.status_code == 404
 
 
