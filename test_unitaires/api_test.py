@@ -99,7 +99,7 @@ def test_get_user_model():
     with patch('api.api.data',mock_data):
         with patch('api.api.title_dict',mock_title_dict_data):
             with patch('api.api.movie_data',mock_movie_data):
-                response = client.get("/user_model",params={'user_id':1644,})
+                response = client.get("/user_model",params={'user_id':1644,'subject':'Thriller','movie_name':'Toy Story (1995)'})
                 assert response.status_code == 200
                 assert response.json() == {'message': 'No movie for you :('}
 
