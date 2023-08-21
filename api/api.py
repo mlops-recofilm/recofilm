@@ -17,10 +17,8 @@ if os.getenv("GITHUB_ACTION") is None:
 else:
     data = None
     movie_data = None
-    #ajout 
     user_data = None
     title_dict = None
-    #fin ajout
     GenreEnum = None
 
 
