@@ -1,6 +1,0 @@
-movieId,title,genres,userId,rating,timestamp,tagId,tag,relevance,user tag
-1,Toy Story (1995),Adventure|Animation|Children|Comedy|Fantasy,1644,3.5,1421135243,11,3d,0.577,Watched
-173,Judge Dredd (1995),Action|Crime|Sci-Fi,76107,2.5,1388717063,584,jungle,0.3087499999999999,futuristic
-125916,Fifty Shades of Grey (2015),Drama,104576,1.0,1424447704,1014,teen movie,0.5465,stupid
-70286,District 9 (2009),Mystery|Sci-Fi|Thriller,92472,5.0,1252372431,238,compassionate,0.41825,humor
-6440,Barton Fink (1991),Drama|Thriller,130827,3.5,1343835450,691,narrated,0.5905,hotel
