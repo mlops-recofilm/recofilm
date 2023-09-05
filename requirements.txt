@@ -2,4 +2,9 @@ pandas
 scikit-learn
 fastapi
 uvicorn[standard]
+<<<<<<< HEAD
 dvc
+=======
+pandas
+dvc
+>>>>>>> b89a9bc960adac50f403c8bbc41dcb22d77c38c1

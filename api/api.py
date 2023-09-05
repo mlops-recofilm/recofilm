@@ -19,13 +19,18 @@ def get_next_new_userid():
         os.environ['NEXT_NEW_USERID'] = str(NEXT_NEW_USERID)
     return NEXT_NEW_USERID
 
+# print(NEXT_NEW_USERID)
+
 
 # # Set environment variables
 # os.environ['NEXT_NEW_USERID'] = str(data.userId.max() + 1)
 
+# print('NEXT_USERID' in os.environ)
 # # Get environment variables
 # NEXT_USERID = os.getenv('NEXT_USERID')
+# print('NEXT_USERID',NEXT_USERID)
 # NEXT_NEW_USERID = os.getenv('NEXT_NEW_USERID')
+# print('NEXT_NEW_USERID',NEXT_NEW_USERID)
 
 app = FastAPI(
     title="Reco API",
@@ -87,7 +92,6 @@ def remind_reco(k: int, userid: Annotated[str, Depends(get_user_credentials)]) -
 
 @app.post("/addRating", tags=['add data'])
 def add_rating(movieid: str, rating: float, userid: Annotated[str, Depends(get_user_credentials)]) -> bool:
-    print(userid)
     success = add_ratings(userid, movieid, rating)
     return success
 
@@ -145,19 +149,10 @@ def create_user(new_ratings: RatingsItem) -> int:
     # return app.state.NEW_USERID - 1
 
     # version 3
-    next_new_userid_filepath = "../data/next_new_userid"
-
-    # create file if doesn't exist
-    if os.path.exists(next_new_userid_filepath):
-        mode = "r+"
-    else:
-        mode = "x+"
-
-    with open(next_new_userid_filepath, mode) as next_new_userid_file: # "r+"
+    with open("../data/next_new_userid", "r+") as next_new_userid_file:
         next_new_userid = next_new_userid_file.read()
-        if next_new_userid:
-            next_new_userid = int(next_new_userid)
-        else:
+        next_new_userid = int(next_new_userid)
+        if next_new_userid == -1:
             next_new_userid = data.userId.max() + 1
         add_ratings(userid=next_new_userid, movieids=new_ratings.movieid, ratings=new_ratings.rating)
         next_new_userid_file.seek(0)
